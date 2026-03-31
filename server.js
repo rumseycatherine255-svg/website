@@ -49,7 +49,7 @@ async function getUserRole(userId, groupId) {
   return group ? { rank: group.role.rank, roleId: group.role.id, name: group.role.name } : null;
 }
 
-// ⭐ FIXED CLOUD API FUNCTION
+// FIXED cloud API
 async function setRoleApi(userId, roleId, groupId, apiKey) {
   const memberships = await axios.get(
     `https://apis.roblox.com/cloud/v2/groups/${groupId}/memberships?maxPageSize=100`,
@@ -64,9 +64,7 @@ async function setRoleApi(userId, roleId, groupId, apiKey) {
 
   await axios.patch(
     `https://apis.roblox.com/cloud/v2/${membership.name}`,
-    {
-      role: `groups/${groupId}/roles/${roleId}`
-    },
+    { role: `groups/${groupId}/roles/${roleId}` },
     {
       headers: {
         "x-api-key": apiKey,
@@ -113,7 +111,58 @@ async function doRankAction(ws, userId, action, targetRank) {
   return newRole;
 }
 
-// ── Workspace create ──────────────────────────────────────────
+// ── AUTH ROUTES ───────────────────────────────────────────────
+app.post("/api/auth/register", async (req, res) => {
+  const { email, username, password } = req.body;
+
+  if (!email || !username || !password)
+    return res.status(400).json({ error: "All fields required" });
+
+  const existing = await db.users.findOne({ email: email.toLowerCase() });
+  if (existing) return res.status(400).json({ error: "Email taken" });
+
+  const hash = await bcrypt.hash(password, 10);
+
+  const user = await db.users.insert({
+    email: email.toLowerCase(),
+    username,
+    password: hash,
+    createdAt: new Date()
+  });
+
+  const token = jwt.sign(
+    { id: user._id, username },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.json({ success: true, token, username });
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await db.users.findOne({ email: email?.toLowerCase() });
+  if (!user) return res.status(401).json({ error: "Invalid login" });
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return res.status(401).json({ error: "Invalid login" });
+
+  const token = jwt.sign(
+    { id: user._id, username: user.username },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.json({ success: true, token, username: user.username });
+});
+
+// ── WORKSPACE ─────────────────────────────────────────────────
+app.get("/api/workspaces", authMiddleware, async (req, res) => {
+  const ws = await db.workspaces.find({ userId: req.user.id });
+  res.json(ws);
+});
+
 app.post("/api/workspaces", authMiddleware, async (req, res) => {
   const { name, groupId, apiKey } = req.body;
 
@@ -126,18 +175,17 @@ app.post("/api/workspaces", authMiddleware, async (req, res) => {
       groupId: parseInt(groupId),
       apiKey,
       protectedRank: 253,
-      ranks,
-      createdAt: new Date()
+      ranks
     });
 
     res.json({ success: true, id: ws._id });
 
   } catch {
-    res.status(400).json({ error: "Invalid group or API key" });
+    res.status(400).json({ error: "Invalid group" });
   }
 });
 
-// ── Rank endpoint ─────────────────────────────────────────────
+// ── RANK ──────────────────────────────────────────────────────
 app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
   const ws = await db.workspaces.findOne({
     _id: req.params.id,
@@ -150,8 +198,6 @@ app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
 
   try {
     const userId = await getUserIdByName(username);
-    if (!userId) return res.status(404).json({ error: "User not found" });
-
     const newRole = await doRankAction(ws, userId, action, rank);
 
     res.json({ success: true, newRank: newRole.name });
@@ -161,26 +207,13 @@ app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
   }
 });
 
-// ── In-game ranking ───────────────────────────────────────────
-app.post("/api/game/:id/rank", async (req, res) => {
-  const ws = await db.workspaces.findOne({ _id: req.params.id });
-  if (!ws) return res.status(404).json({ error: "Workspace not found" });
-
-  const { userId, action, rank } = req.body;
-
-  try {
-    const newRole = await doRankAction(ws, userId, action, rank);
-    res.json({ success: true, newRank: newRole.name });
-
-  } catch (e) {
-    res.status(400).json({ error: e.message });
+// ── IMPORTANT FIXED CATCH ALL ─────────────────────────────────
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({ error: "API route not found" });
   }
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-
-// ── SPA ───────────────────────────────────────────────────────
-app.get("*", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "index.html"))
-);
 
 app.listen(PORT, () =>
   console.log(`✅ RoTools running on http://localhost:${PORT}`)
