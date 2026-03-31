@@ -5,66 +5,20 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
-const Database = require("better-sqlite3");
+const Datastore = require("nedb-promises");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "rotools-secret-change-in-production";
 
 // ── Database ──────────────────────────────────────────────────
-const db = new Database(process.env.DB_PATH || "./rotools.db");
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    plan TEXT DEFAULT 'free',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS workspaces (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    group_id INTEGER NOT NULL,
-    api_key TEXT NOT NULL,
-    protected_rank INTEGER DEFAULT 253,
-    ranks TEXT DEFAULT '[]',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS workspace_users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    workspace_id INTEGER NOT NULL,
-    username TEXT NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT DEFAULT 'moderator',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (workspace_id) REFERENCES workspaces(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS rank_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    workspace_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    target TEXT NOT NULL,
-    new_rank TEXT NOT NULL,
-    by TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (workspace_id) REFERENCES workspaces(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS whitelist (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    workspace_id INTEGER NOT NULL,
-    roblox_user_id INTEGER NOT NULL,
-    roblox_username TEXT NOT NULL,
-    FOREIGN KEY (workspace_id) REFERENCES workspaces(id)
-  );
-`);
+const db = {
+  users:      Datastore.create({ filename: "./data/users.db",      autoload: true }),
+  workspaces: Datastore.create({ filename: "./data/workspaces.db", autoload: true }),
+  wsUsers:    Datastore.create({ filename: "./data/wsusers.db",    autoload: true }),
+  log:        Datastore.create({ filename: "./data/log.db",        autoload: true }),
+  whitelist:  Datastore.create({ filename: "./data/whitelist.db",  autoload: true }),
+};
 
 // ── Middleware ─────────────────────────────────────────────────
 app.use(cors());
@@ -76,23 +30,20 @@ app.use(express.static(path.join(__dirname, "public")));
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    req.user = jwt.verify(token, JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-  }
+  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
+  catch { res.status(401).json({ error: "Invalid token" }); }
 }
 
 function wsAuthMiddleware(req, res, next) {
   const token = req.headers["x-ws-token"];
   if (!token) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    req.wsUser = jwt.verify(token, JWT_SECRET + "_ws");
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid workspace token" });
-  }
+  try { req.wsUser = jwt.verify(token, JWT_SECRET + "_ws"); next(); }
+  catch { res.status(401).json({ error: "Invalid workspace token" }); }
+}
+
+function wsOwner(req, res, next) {
+  if (req.wsUser.workspaceId !== req.params.id) return res.status(403).json({ error: "Forbidden" });
+  next();
 }
 
 // ── Roblox helpers ────────────────────────────────────────────
@@ -130,248 +81,220 @@ async function getUserIdByName(username) {
   return res.data.data[0]?.id || null;
 }
 
-// ── Account routes ────────────────────────────────────────────
+async function doRankAction(ws, userId, action, targetRank) {
+  const ranks = ws.ranks;
+  const current = await getUserRole(userId, ws.groupId);
+  if (!current) throw new Error("User not in group");
+  if (current.rank >= ws.protectedRank) throw new Error("User is protected");
+  let newRole;
+  if (action === "promote") {
+    const idx = ranks.findIndex(r => r.rank === current.rank);
+    if (idx === -1 || idx === ranks.length - 1) throw new Error("Can't promote further");
+    newRole = ranks[idx + 1];
+  } else if (action === "demote") {
+    const idx = ranks.findIndex(r => r.rank === current.rank);
+    if (idx <= 0) throw new Error("Can't demote further");
+    newRole = ranks[idx - 1];
+  } else if (action === "setrank") {
+    newRole = ranks.find(r => r.rank === parseInt(targetRank));
+    if (!newRole) throw new Error("Invalid rank");
+    if (newRole.rank >= ws.protectedRank) throw new Error("Can't set to protected rank");
+  }
+  await setRoleApi(userId, newRole.id, ws.groupId, ws.apiKey);
+  return newRole;
+}
+
+// ── Auth routes ───────────────────────────────────────────────
 app.post("/api/auth/register", async (req, res) => {
   const { email, username, password } = req.body;
   if (!email || !username || !password) return res.status(400).json({ error: "All fields required" });
   if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
   try {
+    const existing = await db.users.findOne({ $or: [{ email: email.toLowerCase() }, { username }] });
+    if (existing) return res.status(400).json({ error: "Email or username already taken" });
     const hash = await bcrypt.hash(password, 10);
-    const stmt = db.prepare("INSERT INTO users (email, username, password) VALUES (?, ?, ?)");
-    const result = stmt.run(email.toLowerCase(), username, hash);
-    const token = jwt.sign({ id: result.lastInsertRowid, username, email }, JWT_SECRET, { expiresIn: "7d" });
+    const user = await db.users.insert({ email: email.toLowerCase(), username, password: hash, plan: "free", createdAt: new Date() });
+    const token = jwt.sign({ id: user._id, username, email }, JWT_SECRET, { expiresIn: "7d" });
     res.json({ success: true, token, username });
-  } catch (e) {
-    if (e.message.includes("UNIQUE")) return res.status(400).json({ error: "Email or username already taken" });
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
-  const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email?.toLowerCase());
+  const user = await db.users.findOne({ email: email?.toLowerCase() });
   if (!user) return res.status(401).json({ error: "Invalid email or password" });
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(401).json({ error: "Invalid email or password" });
-  const token = jwt.sign({ id: user.id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
+  const token = jwt.sign({ id: user._id, username: user.username, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
   res.json({ success: true, token, username: user.username });
 });
 
-app.get("/api/auth/me", authMiddleware, (req, res) => {
-  const user = db.prepare("SELECT id, email, username, plan, created_at FROM users WHERE id = ?").get(req.user.id);
-  res.json(user);
+app.get("/api/auth/me", authMiddleware, async (req, res) => {
+  const user = await db.users.findOne({ _id: req.user.id });
+  if (!user) return res.status(404).json({ error: "Not found" });
+  res.json({ id: user._id, email: user.email, username: user.username, plan: user.plan });
 });
 
 // ── Workspace routes ──────────────────────────────────────────
-app.get("/api/workspaces", authMiddleware, (req, res) => {
-  const workspaces = db.prepare("SELECT id, name, group_id, protected_rank, created_at FROM workspaces WHERE user_id = ?").all(req.user.id);
-  res.json(workspaces);
+app.get("/api/workspaces", authMiddleware, async (req, res) => {
+  const workspaces = await db.workspaces.find({ userId: req.user.id });
+  res.json(workspaces.map(w => ({ id: w._id, name: w.name, groupId: w.groupId, protectedRank: w.protectedRank, createdAt: w.createdAt })));
 });
 
 app.post("/api/workspaces", authMiddleware, async (req, res) => {
   const { name, groupId, apiKey } = req.body;
   if (!name || !groupId || !apiKey) return res.status(400).json({ error: "All fields required" });
-  const existing = db.prepare("SELECT COUNT(*) as c FROM workspaces WHERE user_id = ?").get(req.user.id);
-  if (existing.c >= 3) return res.status(400).json({ error: "Free plan limited to 3 workspaces" });
+  const count = await db.workspaces.count({ userId: req.user.id });
+  if (count >= 3) return res.status(400).json({ error: "Free plan limited to 3 workspaces" });
   try {
     const ranks = await fetchGroupRoles(groupId);
-    const stmt = db.prepare("INSERT INTO workspaces (user_id, name, group_id, api_key, ranks) VALUES (?, ?, ?, ?, ?)");
-    const result = stmt.run(req.user.id, name, parseInt(groupId), apiKey, JSON.stringify(ranks));
-    res.json({ success: true, id: result.lastInsertRowid });
-  } catch (e) {
-    res.status(400).json({ error: "Invalid Group ID or couldn't fetch roles from Roblox" });
-  }
+    const ws = await db.workspaces.insert({ userId: req.user.id, name, groupId: parseInt(groupId), apiKey, protectedRank: 253, ranks, createdAt: new Date() });
+    res.json({ success: true, id: ws._id });
+  } catch { res.status(400).json({ error: "Invalid Group ID or couldn't fetch roles from Roblox" }); }
 });
 
-app.delete("/api/workspaces/:id", authMiddleware, (req, res) => {
-  const ws = db.prepare("SELECT * FROM workspaces WHERE id = ? AND user_id = ?").get(req.params.id, req.user.id);
+app.delete("/api/workspaces/:id", authMiddleware, async (req, res) => {
+  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
-  db.prepare("DELETE FROM workspaces WHERE id = ?").run(req.params.id);
-  db.prepare("DELETE FROM workspace_users WHERE workspace_id = ?").run(req.params.id);
-  db.prepare("DELETE FROM rank_log WHERE workspace_id = ?").run(req.params.id);
-  db.prepare("DELETE FROM whitelist WHERE workspace_id = ?").run(req.params.id);
+  await db.workspaces.remove({ _id: req.params.id });
+  await db.wsUsers.remove({ workspaceId: req.params.id }, { multi: true });
+  await db.log.remove({ workspaceId: req.params.id }, { multi: true });
+  await db.whitelist.remove({ workspaceId: req.params.id }, { multi: true });
   res.json({ success: true });
 });
 
-app.get("/api/workspaces/:id/settings", authMiddleware, (req, res) => {
-  const ws = db.prepare("SELECT * FROM workspaces WHERE id = ? AND user_id = ?").get(req.params.id, req.user.id);
+app.get("/api/workspaces/:id/settings", authMiddleware, async (req, res) => {
+  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
-  res.json({ ...ws, api_key: "••••••••" + ws.api_key.slice(-4) });
+  res.json({ ...ws, apiKey: "••••" + ws.apiKey.slice(-4), id: ws._id });
 });
 
 app.patch("/api/workspaces/:id/settings", authMiddleware, async (req, res) => {
-  const ws = db.prepare("SELECT * FROM workspaces WHERE id = ? AND user_id = ?").get(req.params.id, req.user.id);
+  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
   const { name, groupId, apiKey, protectedRank } = req.body;
-  let ranks = JSON.parse(ws.ranks);
-  if (groupId && parseInt(groupId) !== ws.group_id) {
-    try { ranks = await fetchGroupRoles(groupId); } catch { return res.status(400).json({ error: "Invalid Group ID" }); }
+  const update = {};
+  if (name) update.name = name;
+  if (apiKey) update.apiKey = apiKey;
+  if (protectedRank) update.protectedRank = parseInt(protectedRank);
+  if (groupId && parseInt(groupId) !== ws.groupId) {
+    try { update.ranks = await fetchGroupRoles(groupId); update.groupId = parseInt(groupId); }
+    catch { return res.status(400).json({ error: "Invalid Group ID" }); }
   }
-  db.prepare("UPDATE workspaces SET name=?, group_id=?, api_key=?, protected_rank=?, ranks=? WHERE id=?")
-    .run(name || ws.name, groupId ? parseInt(groupId) : ws.group_id, apiKey || ws.api_key, protectedRank || ws.protected_rank, JSON.stringify(ranks), req.params.id);
+  await db.workspaces.update({ _id: req.params.id }, { $set: update });
   res.json({ success: true });
 });
 
-// ── Workspace login (staff panel) ─────────────────────────────
+// ── Workspace login ───────────────────────────────────────────
 app.post("/api/workspaces/:id/login", async (req, res) => {
   const { username, password } = req.body;
-  const ws = db.prepare("SELECT * FROM workspaces WHERE id = ?").get(req.params.id);
+  const ws = await db.workspaces.findOne({ _id: req.params.id });
   if (!ws) return res.status(404).json({ error: "Workspace not found" });
-
-  // Check owner account too
-  const owner = db.prepare("SELECT * FROM users WHERE id = ?").get(ws.user_id);
+  const owner = await db.users.findOne({ _id: ws.userId });
   let role = null;
-  if (owner.username === username) {
+  if (owner && owner.username === username) {
     const ok = await bcrypt.compare(password, owner.password);
     if (ok) role = "admin";
   }
   if (!role) {
-    const wsUser = db.prepare("SELECT * FROM workspace_users WHERE workspace_id = ? AND username = ?").get(req.params.id, username);
+    const wsUser = await db.wsUsers.findOne({ workspaceId: req.params.id, username });
     if (wsUser) {
       const ok = await bcrypt.compare(password, wsUser.password);
       if (ok) role = wsUser.role;
     }
   }
   if (!role) return res.status(401).json({ error: "Invalid username or password" });
-  const token = jwt.sign({ workspaceId: parseInt(req.params.id), username, role }, JWT_SECRET + "_ws", { expiresIn: "12h" });
+  const token = jwt.sign({ workspaceId: req.params.id, username, role }, JWT_SECRET + "_ws", { expiresIn: "12h" });
   res.json({ success: true, token, username, role });
 });
 
 // ── Workspace staff API ───────────────────────────────────────
-function getWs(id) { return db.prepare("SELECT * FROM workspaces WHERE id = ?").get(id); }
-
-app.get("/api/ws/:id/ranks", wsAuthMiddleware, (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id)) return res.status(403).json({ error: "Forbidden" });
-  const ws = getWs(req.params.id);
-  res.json(JSON.parse(ws.ranks));
+app.get("/api/ws/:id/ranks", authMiddleware, async (req, res) => {
+  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
+  if (!ws) return res.status(404).json({ error: "Not found" });
+  res.json(ws.ranks);
 });
 
-app.get("/api/ws/:id/log", wsAuthMiddleware, (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id)) return res.status(403).json({ error: "Forbidden" });
-  const log = db.prepare("SELECT * FROM rank_log WHERE workspace_id = ? ORDER BY created_at DESC LIMIT 100").all(req.params.id);
-  res.json(log);
+app.get("/api/ws/:id/log", authMiddleware, async (req, res) => {
+  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
+  if (!ws) return res.status(404).json({ error: "Not found" });
+  const logs = await db.log.find({ workspaceId: req.params.id }).sort({ createdAt: -1 }).limit(100);
+  res.json(logs);
 });
 
-app.get("/api/ws/:id/whitelist", wsAuthMiddleware, (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id)) return res.status(403).json({ error: "Forbidden" });
-  res.json(db.prepare("SELECT * FROM whitelist WHERE workspace_id = ?").all(req.params.id));
+app.get("/api/ws/:id/whitelist", authMiddleware, async (req, res) => {
+  const list = await db.whitelist.find({ workspaceId: req.params.id });
+  res.json(list);
 });
 
-app.post("/api/ws/:id/whitelist/add", wsAuthMiddleware, async (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id)) return res.status(403).json({ error: "Forbidden" });
+app.post("/api/ws/:id/whitelist/add", authMiddleware, async (req, res) => {
   const { username } = req.body;
   const userId = await getUserIdByName(username);
   if (!userId) return res.status(404).json({ error: "Roblox user not found" });
-  const existing = db.prepare("SELECT id FROM whitelist WHERE workspace_id = ? AND roblox_user_id = ?").get(req.params.id, userId);
-  if (!existing) db.prepare("INSERT INTO whitelist (workspace_id, roblox_user_id, roblox_username) VALUES (?,?,?)").run(req.params.id, userId, username);
+  const existing = await db.whitelist.findOne({ workspaceId: req.params.id, robloxUserId: userId });
+  if (!existing) await db.whitelist.insert({ workspaceId: req.params.id, robloxUserId: userId, robloxUsername: username });
   res.json({ success: true });
 });
 
-app.post("/api/ws/:id/whitelist/remove", wsAuthMiddleware, (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id)) return res.status(403).json({ error: "Forbidden" });
-  db.prepare("DELETE FROM whitelist WHERE workspace_id = ? AND roblox_user_id = ?").run(req.params.id, req.body.userId);
+app.post("/api/ws/:id/whitelist/remove", authMiddleware, async (req, res) => {
+  await db.whitelist.remove({ workspaceId: req.params.id, robloxUserId: req.body.userId }, { multi: true });
   res.json({ success: true });
 });
 
-app.get("/api/ws/:id/staff", wsAuthMiddleware, (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id) || req.wsUser.role !== "admin") return res.status(403).json({ error: "Forbidden" });
-  const users = db.prepare("SELECT id, username, role, created_at FROM workspace_users WHERE workspace_id = ?").all(req.params.id);
-  res.json(users);
+app.get("/api/ws/:id/staff", authMiddleware, async (req, res) => {
+  const staff = await db.wsUsers.find({ workspaceId: req.params.id });
+  res.json(staff.map(u => ({ id: u._id, username: u.username, role: u.role, createdAt: u.createdAt })));
 });
 
-app.post("/api/ws/:id/staff/add", wsAuthMiddleware, async (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id) || req.wsUser.role !== "admin") return res.status(403).json({ error: "Forbidden" });
+app.post("/api/ws/:id/staff/add", authMiddleware, async (req, res) => {
   const { username, password, role } = req.body;
   if (!username || !password) return res.status(400).json({ error: "Missing fields" });
   const hash = await bcrypt.hash(password, 10);
-  db.prepare("INSERT INTO workspace_users (workspace_id, username, password, role) VALUES (?,?,?,?)").run(req.params.id, username, hash, role || "moderator");
+  await db.wsUsers.insert({ workspaceId: req.params.id, username, password: hash, role: role || "moderator", createdAt: new Date() });
   res.json({ success: true });
 });
 
-app.post("/api/ws/:id/staff/remove", wsAuthMiddleware, (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id) || req.wsUser.role !== "admin") return res.status(403).json({ error: "Forbidden" });
-  db.prepare("DELETE FROM workspace_users WHERE workspace_id = ? AND id = ?").run(req.params.id, req.body.id);
+app.post("/api/ws/:id/staff/remove", authMiddleware, async (req, res) => {
+  await db.wsUsers.remove({ _id: req.body.id, workspaceId: req.params.id });
   res.json({ success: true });
 });
 
-app.get("/api/ws/:id/members", wsAuthMiddleware, async (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id)) return res.status(403).json({ error: "Forbidden" });
+app.get("/api/ws/:id/members", authMiddleware, async (req, res) => {
   try {
-    const ws = getWs(req.params.id);
-    const r = await axios.get(`https://groups.roblox.com/v1/groups/${ws.group_id}/users?limit=100&sortOrder=Asc`);
+    const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
+    if (!ws) return res.status(404).json({ error: "Not found" });
+    const r = await axios.get(`https://groups.roblox.com/v1/groups/${ws.groupId}/users?limit=100&sortOrder=Asc`);
     res.json(r.data);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post("/api/ws/:id/rank", wsAuthMiddleware, async (req, res) => {
-  if (req.wsUser.workspaceId !== parseInt(req.params.id)) return res.status(403).json({ error: "Forbidden" });
-  const ws = getWs(req.params.id);
-  const ranks = JSON.parse(ws.ranks);
-  const { username, action, rank: targetRank } = req.body;
+app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
+  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
+  if (!ws) return res.status(404).json({ error: "Not found" });
+  const { username, action, rank } = req.body;
   try {
     const userId = await getUserIdByName(username);
     if (!userId) return res.status(404).json({ error: "Roblox user not found" });
-    const current = await getUserRole(userId, ws.group_id);
-    if (!current) return res.status(404).json({ error: "User not in group" });
-    if (current.rank >= ws.protected_rank) return res.status(403).json({ error: "User is protected" });
-    let newRole;
-    if (action === "promote") {
-      const idx = ranks.findIndex(r => r.rank === current.rank);
-      if (idx === -1 || idx === ranks.length - 1) return res.status(400).json({ error: "Can't promote further" });
-      newRole = ranks[idx + 1];
-    } else if (action === "demote") {
-      const idx = ranks.findIndex(r => r.rank === current.rank);
-      if (idx <= 0) return res.status(400).json({ error: "Can't demote further" });
-      newRole = ranks[idx - 1];
-    } else if (action === "setrank") {
-      newRole = ranks.find(r => r.rank === parseInt(targetRank));
-      if (!newRole) return res.status(400).json({ error: "Invalid rank" });
-      if (newRole.rank >= ws.protected_rank) return res.status(403).json({ error: "Can't set to protected rank" });
-    } else {
-      return res.status(400).json({ error: "Unknown action" });
-    }
-    await setRoleApi(userId, newRole.id, ws.group_id, ws.api_key);
-    db.prepare("INSERT INTO rank_log (workspace_id, action, target, new_rank, by) VALUES (?,?,?,?,?)")
-      .run(req.params.id, action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank", username, newRole.name, req.wsUser.username);
+    const newRole = await doRankAction(ws, userId, action, rank);
+    await db.log.insert({ workspaceId: req.params.id, action: action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank", target: username, new_rank: newRole.name, by: req.user.username, createdAt: new Date() });
     res.json({ success: true, newRank: newRole.name });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-// ── Roblox game endpoint (no auth, uses workspace id) ─────────
+// ── In-game endpoint ──────────────────────────────────────────
 app.post("/api/game/:id/rank", async (req, res) => {
-  const ws = getWs(req.params.id);
+  const ws = await db.workspaces.findOne({ _id: req.params.id });
   if (!ws) return res.status(404).json({ error: "Workspace not found" });
-  const { userId, action, rank: targetRank, by } = req.body;
-  const ranks = JSON.parse(ws.ranks);
+  const { userId, action, rank, by } = req.body;
   try {
-    const current = await getUserRole(userId, ws.group_id);
-    if (!current) return res.status(404).json({ error: "User not in group" });
-    if (current.rank >= ws.protected_rank) return res.status(403).json({ error: "User is protected" });
-    let newRole;
-    if (action === "promote") {
-      const idx = ranks.findIndex(r => r.rank === current.rank);
-      if (idx === -1 || idx === ranks.length - 1) return res.status(400).json({ error: "Can't promote further" });
-      newRole = ranks[idx + 1];
-    } else if (action === "demote") {
-      const idx = ranks.findIndex(r => r.rank === current.rank);
-      if (idx <= 0) return res.status(400).json({ error: "Can't demote further" });
-      newRole = ranks[idx - 1];
-    } else if (action === "setrank") {
-      newRole = ranks.find(r => r.rank === parseInt(targetRank));
-      if (!newRole) return res.status(400).json({ error: "Invalid rank" });
-    } else {
-      return res.status(400).json({ error: "Unknown action" });
-    }
-    await setRoleApi(userId, newRole.id, ws.group_id, ws.api_key);
-    db.prepare("INSERT INTO rank_log (workspace_id, action, target, new_rank, by) VALUES (?,?,?,?,?)")
-      .run(req.params.id, action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank", by || userId.toString(), newRole.name, "In-Game");
+    const newRole = await doRankAction(ws, userId, action, rank);
+    const username = await getUsernameById(userId);
+    await db.log.insert({ workspaceId: req.params.id, action: action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank", target: username, new_rank: newRole.name, by: by || "In-Game", createdAt: new Date() });
     res.json({ success: true, newRank: newRole.name });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // ── Catch-all → SPA ───────────────────────────────────────────
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 app.listen(PORT, () => console.log(`✅ RoTools running on http://localhost:${PORT}`));
