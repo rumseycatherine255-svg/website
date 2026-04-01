@@ -41,17 +41,6 @@ function authMiddleware(req, res, next) {
   }
 }
 
-function wsAuthMiddleware(req, res, next) {
-  const token = req.headers["x-ws-token"];
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    req.wsUser = jwt.verify(token, JWT_SECRET + "_ws");
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid workspace token" });
-  }
-}
-
 /* ================= ROBLOX HELPERS ================= */
 
 async function fetchGroupRoles(groupId) {
@@ -79,8 +68,6 @@ async function getUserRole(userId, groupId) {
     ? { rank: g.role.rank, roleId: g.role.id, name: g.role.name }
     : null;
 }
-
-/* ===== FIXED PROMOTION FUNCTION ===== */
 
 async function setRoleApi(userId, roleId, groupId, apiKey) {
   const memberships = await axios.get(
@@ -133,8 +120,6 @@ async function doRankAction(ws, userId, action, targetRank) {
   if (action === "setrank") {
     newRole = ranks.find(r => r.rank === parseInt(targetRank));
     if (!newRole) throw new Error("Invalid rank");
-    if (newRole.rank >= ws.protectedRank)
-      throw new Error("Can't set protected rank");
   }
 
   await setRoleApi(userId, newRole.id, ws.groupId, ws.apiKey);
@@ -156,7 +141,7 @@ app.post("/api/auth/register", async (req, res) => {
   const token = jwt.sign(
     { id: user._id, username },
     JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "3650d" }
   );
 
   res.json({ success: true, token, username });
@@ -177,7 +162,7 @@ app.post("/api/auth/login", async (req, res) => {
   const token = jwt.sign(
     { id: user._id, username: user.username },
     JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "3650d" }
   );
 
   res.json({ success: true, token, username: user.username });
@@ -187,7 +172,15 @@ app.post("/api/auth/login", async (req, res) => {
 
 app.get("/api/workspaces", authMiddleware, async (req, res) => {
   const ws = await db.workspaces.find({ userId: req.user.id });
-  res.json(ws);
+
+  res.json(
+    ws.map(w => ({
+      id: w._id,
+      name: w.name,
+      groupId: w.groupId,
+      protectedRank: w.protectedRank
+    }))
+  );
 });
 
 app.post("/api/workspaces", authMiddleware, async (req, res) => {
