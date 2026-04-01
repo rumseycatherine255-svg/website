@@ -150,16 +150,24 @@ app.post("/api/workspaces",auth,async(req,res)=>{
   }
 });
 
-/* FIXED RANKS ROUTE */
+/* ranks — LIVE FETCH */
 
 app.get("/api/ws/:id/ranks",auth,async(req,res)=>{
-  const ws = await db.workspaces.findOne({
-    _id:req.params.id,
-    userId:req.user.id
-  });
+  try{
+    const ws = await db.workspaces.findOne({
+      _id:req.params.id,
+      userId:req.user.id
+    });
 
-  if(!ws) return res.status(404).json({error:"Not found"});
-  res.json(ws.ranks || []);
+    if(!ws) return res.status(404).json({error:"Not found"});
+
+    const ranks = await fetchGroupRoles(ws.groupId);
+
+    res.json(ranks);
+
+  }catch(e){
+    res.status(500).json({error:e.message});
+  }
 });
 
 /* members */
@@ -199,13 +207,14 @@ app.post("/api/ws/:id/rank",auth,async(req,res)=>{
     if(!current) throw new Error("User not in group");
     if(current.rank >= ws.protectedRank) throw new Error("Protected user");
 
-    const idx = ws.ranks.findIndex(r=>r.rank===current.rank);
+    const ranks = await fetchGroupRoles(ws.groupId);
+    const idx = ranks.findIndex(r=>r.rank===current.rank);
 
     let newRole;
 
-    if(action==="promote") newRole = ws.ranks[idx+1];
-    if(action==="demote") newRole = ws.ranks[idx-1];
-    if(action==="setrank") newRole = ws.ranks.find(r=>r.rank==rank);
+    if(action==="promote") newRole = ranks[idx+1];
+    if(action==="demote") newRole = ranks[idx-1];
+    if(action==="setrank") newRole = ranks.find(r=>r.rank==rank);
 
     if(!newRole) throw new Error("Invalid rank");
 
