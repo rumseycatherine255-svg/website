@@ -52,14 +52,20 @@ async function getUserRole(userId, groupId) {
   return group ? { rank: parseInt(group.role.rank), roleId: parseInt(group.role.id), name: group.role.name } : null;
 }
 
+// ── NEW: Uses the older v1 API which works reliably with API keys ──
 async function setRoleApi(userId, roleId, groupId, apiKey) {
-  const url = `https://apis.roblox.com/cloud/v2/groups/${groupId}/memberships/${userId}`;
-  const body = { roleId: `groups/${groupId}/roles/${roleId}` };
-  console.log("Setting role:", url, body);
-  const res = await axios.patch(url, body, {
-    headers: { "x-api-key": apiKey, "Content-Type": "application/json" }
-  });
-  console.log("Roblox response:", res.status, res.data);
+  console.log(`Setting role via v1: userId=${userId} roleId=${roleId} groupId=${groupId}`);
+  const res = await axios.patch(
+    `https://groups.roblox.com/v1/groups/${groupId}/users/${userId}`,
+    { roleId: parseInt(roleId) },
+    {
+      headers: {
+        "x-api-key": apiKey,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+  console.log("Roblox v1 response:", res.status, res.data);
   return res.data;
 }
 
@@ -79,7 +85,7 @@ async function getUserIdByName(username) {
 
 async function doRankAction(ws, userId, action, targetRank) {
   const ranks = ws.ranks;
-  if (!ranks || ranks.length === 0) throw new Error("No ranks found in workspace — please re-save your workspace settings");
+  if (!ranks || ranks.length === 0) throw new Error("No ranks found — re-save workspace settings");
 
   console.log("doRankAction:", { userId, action, targetRank, groupId: ws.groupId, ranksCount: ranks.length });
 
@@ -87,27 +93,24 @@ async function doRankAction(ws, userId, action, targetRank) {
   console.log("Current role:", current);
 
   if (!current) throw new Error("User is not in the group");
-  if (current.rank >= parseInt(ws.protectedRank)) throw new Error("User is protected and cannot be ranked");
+  if (parseInt(current.rank) >= parseInt(ws.protectedRank)) throw new Error("User is protected and cannot be ranked");
 
   let newRole;
 
   if (action === "promote") {
     const idx = ranks.findIndex(r => parseInt(r.rank) === parseInt(current.rank));
-    console.log("Promote: current rank index:", idx, "of", ranks.length);
     if (idx === -1) throw new Error(`Current rank (${current.rank}) not found in rank list`);
     if (idx >= ranks.length - 1) throw new Error("User is already at the highest rank");
     newRole = ranks[idx + 1];
 
   } else if (action === "demote") {
     const idx = ranks.findIndex(r => parseInt(r.rank) === parseInt(current.rank));
-    console.log("Demote: current rank index:", idx);
     if (idx === -1) throw new Error(`Current rank (${current.rank}) not found in rank list`);
     if (idx <= 0) throw new Error("User is already at the lowest rank");
     newRole = ranks[idx - 1];
 
   } else if (action === "setrank") {
     newRole = ranks.find(r => parseInt(r.rank) === parseInt(targetRank));
-    console.log("Setrank: target rank:", targetRank, "found:", newRole);
     if (!newRole) throw new Error(`Rank ${targetRank} not found in rank list`);
     if (parseInt(newRole.rank) >= parseInt(ws.protectedRank)) throw new Error("Cannot set to a protected rank");
 
@@ -295,8 +298,8 @@ app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
     });
     res.json({ success: true, newRank: newRole.name });
   } catch (e) {
-    console.error("Rank error:", e.message);
-    res.status(400).json({ error: e.message });
+    console.error("Rank error:", e.response?.data || e.message);
+    res.status(400).json({ error: e.response?.data?.message || e.message });
   }
 });
 
@@ -319,8 +322,8 @@ app.post("/api/game/:id/rank", async (req, res) => {
     });
     res.json({ success: true, newRank: newRole.name });
   } catch (e) {
-    console.error("Game rank error:", e.message);
-    res.status(400).json({ error: e.message });
+    console.error("Game rank error:", e.response?.data || e.message);
+    res.status(400).json({ error: e.response?.data?.message || e.message });
   }
 });
 
