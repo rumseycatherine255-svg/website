@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
+const fs = require("fs");
 const Datastore = require("nedb-promises");
 
 const app = express();
@@ -12,6 +13,8 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "rotools-secret-change-in-production";
 
 // ── Database ──────────────────────────────────────────────────
+if (!fs.existsSync("./data")) fs.mkdirSync("./data");
+
 const db = {
   users:      Datastore.create({ filename: "./data/users.db",      autoload: true }),
   workspaces: Datastore.create({ filename: "./data/workspaces.db", autoload: true }),
@@ -32,18 +35,6 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ error: "Unauthorized" });
   try { req.user = jwt.verify(token, JWT_SECRET); next(); }
   catch { res.status(401).json({ error: "Invalid token" }); }
-}
-
-function wsAuthMiddleware(req, res, next) {
-  const token = req.headers["x-ws-token"];
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
-  try { req.wsUser = jwt.verify(token, JWT_SECRET + "_ws"); next(); }
-  catch { res.status(401).json({ error: "Invalid workspace token" }); }
-}
-
-function wsOwner(req, res, next) {
-  if (req.wsUser.workspaceId !== req.params.id) return res.status(403).json({ error: "Forbidden" });
-  next();
 }
 
 // ── Roblox helpers ────────────────────────────────────────────
@@ -138,7 +129,14 @@ app.get("/api/auth/me", authMiddleware, async (req, res) => {
 // ── Workspace routes ──────────────────────────────────────────
 app.get("/api/workspaces", authMiddleware, async (req, res) => {
   const workspaces = await db.workspaces.find({ userId: req.user.id });
-  res.json(workspaces.map(w => ({ id: w._id, name: w.name, groupId: w.groupId, protectedRank: w.protectedRank, createdAt: w.createdAt })));
+  res.json(workspaces.map(w => ({
+    id: w._id,
+    name: w.name,
+    groupId: w.groupId,
+    protectedRank: w.protectedRank,
+    ranks: w.ranks,
+    createdAt: w.createdAt
+  })));
 });
 
 app.post("/api/workspaces", authMiddleware, async (req, res) => {
@@ -148,9 +146,19 @@ app.post("/api/workspaces", authMiddleware, async (req, res) => {
   if (count >= 3) return res.status(400).json({ error: "Free plan limited to 3 workspaces" });
   try {
     const ranks = await fetchGroupRoles(groupId);
-    const ws = await db.workspaces.insert({ userId: req.user.id, name, groupId: parseInt(groupId), apiKey, protectedRank: 253, ranks, createdAt: new Date() });
+    const ws = await db.workspaces.insert({
+      userId: req.user.id,
+      name,
+      groupId: parseInt(groupId),
+      apiKey,
+      protectedRank: 253,
+      ranks,
+      createdAt: new Date()
+    });
     res.json({ success: true, id: ws._id });
-  } catch { res.status(400).json({ error: "Invalid Group ID or couldn't fetch roles from Roblox" }); }
+  } catch (e) {
+    res.status(400).json({ error: "Invalid Group ID or couldn't fetch roles from Roblox" });
+  }
 });
 
 app.delete("/api/workspaces/:id", authMiddleware, async (req, res) => {
@@ -166,7 +174,14 @@ app.delete("/api/workspaces/:id", authMiddleware, async (req, res) => {
 app.get("/api/workspaces/:id/settings", authMiddleware, async (req, res) => {
   const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
-  res.json({ ...ws, apiKey: "••••" + ws.apiKey.slice(-4), id: ws._id });
+  res.json({
+    id: ws._id,
+    name: ws.name,
+    groupId: ws.groupId,
+    protectedRank: ws.protectedRank,
+    ranks: ws.ranks,
+    apiKey: "••••" + ws.apiKey.slice(-4)
+  });
 });
 
 app.patch("/api/workspaces/:id/settings", authMiddleware, async (req, res) => {
@@ -185,41 +200,19 @@ app.patch("/api/workspaces/:id/settings", authMiddleware, async (req, res) => {
   res.json({ success: true });
 });
 
-// ── Workspace login ───────────────────────────────────────────
-app.post("/api/workspaces/:id/login", async (req, res) => {
-  const { username, password } = req.body;
-  const ws = await db.workspaces.findOne({ _id: req.params.id });
-  if (!ws) return res.status(404).json({ error: "Workspace not found" });
-  const owner = await db.users.findOne({ _id: ws.userId });
-  let role = null;
-  if (owner && owner.username === username) {
-    const ok = await bcrypt.compare(password, owner.password);
-    if (ok) role = "admin";
-  }
-  if (!role) {
-    const wsUser = await db.wsUsers.findOne({ workspaceId: req.params.id, username });
-    if (wsUser) {
-      const ok = await bcrypt.compare(password, wsUser.password);
-      if (ok) role = wsUser.role;
-    }
-  }
-  if (!role) return res.status(401).json({ error: "Invalid username or password" });
-  const token = jwt.sign({ workspaceId: req.params.id, username, role }, JWT_SECRET + "_ws", { expiresIn: "12h" });
-  res.json({ success: true, token, username, role });
-});
-
 // ── Workspace staff API ───────────────────────────────────────
 app.get("/api/ws/:id/ranks", authMiddleware, async (req, res) => {
-  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
+  const ws = await db.workspaces.findOne({ _id: req.params.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
   res.json(ws.ranks);
 });
 
 app.get("/api/ws/:id/log", authMiddleware, async (req, res) => {
-  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
+  const ws = await db.workspaces.findOne({ _id: req.params.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
-  const logs = await db.log.find({ workspaceId: req.params.id }).sort({ createdAt: -1 }).limit(100);
-  res.json(logs);
+  const logs = await db.log.find({ workspaceId: req.params.id });
+  logs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(logs.slice(0, 100));
 });
 
 app.get("/api/ws/:id/whitelist", authMiddleware, async (req, res) => {
@@ -261,7 +254,7 @@ app.post("/api/ws/:id/staff/remove", authMiddleware, async (req, res) => {
 
 app.get("/api/ws/:id/members", authMiddleware, async (req, res) => {
   try {
-    const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
+    const ws = await db.workspaces.findOne({ _id: req.params.id });
     if (!ws) return res.status(404).json({ error: "Not found" });
     const r = await axios.get(`https://groups.roblox.com/v1/groups/${ws.groupId}/users?limit=100&sortOrder=Asc`);
     res.json(r.data);
@@ -269,27 +262,41 @@ app.get("/api/ws/:id/members", authMiddleware, async (req, res) => {
 });
 
 app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
-  const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
-  if (!ws) return res.status(404).json({ error: "Not found" });
-  const { username, action, rank } = req.body;
   try {
+    const ws = await db.workspaces.findOne({ _id: req.params.id });
+    if (!ws) return res.status(404).json({ error: "Workspace not found" });
+    const { username, action, rank } = req.body;
     const userId = await getUserIdByName(username);
     if (!userId) return res.status(404).json({ error: "Roblox user not found" });
     const newRole = await doRankAction(ws, userId, action, rank);
-    await db.log.insert({ workspaceId: req.params.id, action: action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank", target: username, new_rank: newRole.name, by: req.user.username, createdAt: new Date() });
+    await db.log.insert({
+      workspaceId: req.params.id,
+      action: action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank",
+      target: username,
+      new_rank: newRole.name,
+      by: req.user.username,
+      createdAt: new Date()
+    });
     res.json({ success: true, newRank: newRole.name });
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // ── In-game endpoint ──────────────────────────────────────────
 app.post("/api/game/:id/rank", async (req, res) => {
-  const ws = await db.workspaces.findOne({ _id: req.params.id });
-  if (!ws) return res.status(404).json({ error: "Workspace not found" });
-  const { userId, action, rank, by } = req.body;
   try {
+    const ws = await db.workspaces.findOne({ _id: req.params.id });
+    if (!ws) return res.status(404).json({ error: "Workspace not found" });
+    const { userId, action, rank, by } = req.body;
     const newRole = await doRankAction(ws, userId, action, rank);
     const username = await getUsernameById(userId);
-    await db.log.insert({ workspaceId: req.params.id, action: action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank", target: username, new_rank: newRole.name, by: by || "In-Game", createdAt: new Date() });
+    await db.log.insert({
+      workspaceId: req.params.id,
+      action: action === "promote" ? "Promoted" : action === "demote" ? "Demoted" : "Set Rank",
+      target: username,
+      new_rank: newRole.name,
+      by: by || "In-Game",
+      createdAt: new Date()
+    });
     res.json({ success: true, newRank: newRole.name });
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
