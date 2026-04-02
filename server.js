@@ -42,55 +42,80 @@ async function fetchGroupRoles(groupId) {
   const res = await axios.get(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
   return res.data.roles
     .filter(r => r.rank > 0 && r.rank < 255)
-    .map(r => ({ rank: r.rank, id: r.id, name: r.name }))
+    .map(r => ({ rank: parseInt(r.rank), id: parseInt(r.id), name: r.name }))
     .sort((a, b) => a.rank - b.rank);
 }
 
 async function getUserRole(userId, groupId) {
   const res = await axios.get(`https://groups.roblox.com/v1/users/${userId}/groups/roles`);
   const group = res.data.data.find(g => g.group.id === parseInt(groupId));
-  return group ? { rank: group.role.rank, roleId: group.role.id, name: group.role.name } : null;
+  return group ? { rank: parseInt(group.role.rank), roleId: parseInt(group.role.id), name: group.role.name } : null;
 }
 
 async function setRoleApi(userId, roleId, groupId, apiKey) {
-  await axios.patch(
-    `https://apis.roblox.com/cloud/v2/groups/${groupId}/memberships/${userId}`,
-    { roleId: `groups/${groupId}/roles/${roleId}` },
-    { headers: { "x-api-key": apiKey, "Content-Type": "application/json" } }
-  );
+  const url = `https://apis.roblox.com/cloud/v2/groups/${groupId}/memberships/${userId}`;
+  const body = { roleId: `groups/${groupId}/roles/${roleId}` };
+  console.log("Setting role:", url, body);
+  const res = await axios.patch(url, body, {
+    headers: { "x-api-key": apiKey, "Content-Type": "application/json" }
+  });
+  console.log("Roblox response:", res.status, res.data);
+  return res.data;
 }
 
 async function getUsernameById(userId) {
   try {
-    const res = await axios.post("https://users.roblox.com/v1/users", { userIds: [userId], excludeBannedUsers: false });
+    const res = await axios.post("https://users.roblox.com/v1/users", { userIds: [parseInt(userId)], excludeBannedUsers: false });
     return res.data.data[0]?.name || "Unknown";
   } catch { return "Unknown"; }
 }
 
 async function getUserIdByName(username) {
-  const res = await axios.post("https://users.roblox.com/v1/usernames/users", { usernames: [username], excludeBannedUsers: false });
-  return res.data.data[0]?.id || null;
+  try {
+    const res = await axios.post("https://users.roblox.com/v1/usernames/users", { usernames: [username], excludeBannedUsers: false });
+    return res.data.data[0]?.id || null;
+  } catch { return null; }
 }
 
 async function doRankAction(ws, userId, action, targetRank) {
   const ranks = ws.ranks;
+  if (!ranks || ranks.length === 0) throw new Error("No ranks found in workspace — please re-save your workspace settings");
+
+  console.log("doRankAction:", { userId, action, targetRank, groupId: ws.groupId, ranksCount: ranks.length });
+
   const current = await getUserRole(userId, ws.groupId);
-  if (!current) throw new Error("User not in group");
-  if (current.rank >= ws.protectedRank) throw new Error("User is protected");
+  console.log("Current role:", current);
+
+  if (!current) throw new Error("User is not in the group");
+  if (current.rank >= parseInt(ws.protectedRank)) throw new Error("User is protected and cannot be ranked");
+
   let newRole;
+
   if (action === "promote") {
-    const idx = ranks.findIndex(r => r.rank === current.rank);
-    if (idx === -1 || idx === ranks.length - 1) throw new Error("Can't promote further");
+    const idx = ranks.findIndex(r => parseInt(r.rank) === parseInt(current.rank));
+    console.log("Promote: current rank index:", idx, "of", ranks.length);
+    if (idx === -1) throw new Error(`Current rank (${current.rank}) not found in rank list`);
+    if (idx >= ranks.length - 1) throw new Error("User is already at the highest rank");
     newRole = ranks[idx + 1];
+
   } else if (action === "demote") {
-    const idx = ranks.findIndex(r => r.rank === current.rank);
-    if (idx <= 0) throw new Error("Can't demote further");
+    const idx = ranks.findIndex(r => parseInt(r.rank) === parseInt(current.rank));
+    console.log("Demote: current rank index:", idx);
+    if (idx === -1) throw new Error(`Current rank (${current.rank}) not found in rank list`);
+    if (idx <= 0) throw new Error("User is already at the lowest rank");
     newRole = ranks[idx - 1];
+
   } else if (action === "setrank") {
-    newRole = ranks.find(r => r.rank === parseInt(targetRank));
-    if (!newRole) throw new Error("Invalid rank");
-    if (newRole.rank >= ws.protectedRank) throw new Error("Can't set to protected rank");
+    newRole = ranks.find(r => parseInt(r.rank) === parseInt(targetRank));
+    console.log("Setrank: target rank:", targetRank, "found:", newRole);
+    if (!newRole) throw new Error(`Rank ${targetRank} not found in rank list`);
+    if (parseInt(newRole.rank) >= parseInt(ws.protectedRank)) throw new Error("Cannot set to a protected rank");
+
+  } else {
+    throw new Error("Unknown action: " + action);
   }
+
+  console.log("New role:", newRole);
   await setRoleApi(userId, newRole.id, ws.groupId, ws.apiKey);
   return newRole;
 }
@@ -130,12 +155,8 @@ app.get("/api/auth/me", authMiddleware, async (req, res) => {
 app.get("/api/workspaces", authMiddleware, async (req, res) => {
   const workspaces = await db.workspaces.find({ userId: req.user.id });
   res.json(workspaces.map(w => ({
-    id: w._id,
-    name: w.name,
-    groupId: w.groupId,
-    protectedRank: w.protectedRank,
-    ranks: w.ranks,
-    createdAt: w.createdAt
+    id: w._id, name: w.name, groupId: w.groupId,
+    protectedRank: w.protectedRank, ranks: w.ranks, createdAt: w.createdAt
   })));
 });
 
@@ -147,16 +168,13 @@ app.post("/api/workspaces", authMiddleware, async (req, res) => {
   try {
     const ranks = await fetchGroupRoles(groupId);
     const ws = await db.workspaces.insert({
-      userId: req.user.id,
-      name,
-      groupId: parseInt(groupId),
-      apiKey,
-      protectedRank: 253,
-      ranks,
-      createdAt: new Date()
+      userId: req.user.id, name,
+      groupId: parseInt(groupId), apiKey,
+      protectedRank: 253, ranks, createdAt: new Date()
     });
     res.json({ success: true, id: ws._id });
   } catch (e) {
+    console.error("Create workspace error:", e.message);
     res.status(400).json({ error: "Invalid Group ID or couldn't fetch roles from Roblox" });
   }
 });
@@ -175,11 +193,8 @@ app.get("/api/workspaces/:id/settings", authMiddleware, async (req, res) => {
   const ws = await db.workspaces.findOne({ _id: req.params.id, userId: req.user.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
   res.json({
-    id: ws._id,
-    name: ws.name,
-    groupId: ws.groupId,
-    protectedRank: ws.protectedRank,
-    ranks: ws.ranks,
+    id: ws._id, name: ws.name, groupId: ws.groupId,
+    protectedRank: ws.protectedRank, ranks: ws.ranks,
     apiKey: "••••" + ws.apiKey.slice(-4)
   });
 });
@@ -200,7 +215,7 @@ app.patch("/api/workspaces/:id/settings", authMiddleware, async (req, res) => {
   res.json({ success: true });
 });
 
-// ── Workspace staff API ───────────────────────────────────────
+// ── Workspace API ─────────────────────────────────────────────
 app.get("/api/ws/:id/ranks", authMiddleware, async (req, res) => {
   const ws = await db.workspaces.findOne({ _id: req.params.id });
   if (!ws) return res.status(404).json({ error: "Not found" });
@@ -266,8 +281,9 @@ app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
     const ws = await db.workspaces.findOne({ _id: req.params.id });
     if (!ws) return res.status(404).json({ error: "Workspace not found" });
     const { username, action, rank } = req.body;
+    if (!username || !action) return res.status(400).json({ error: "Missing username or action" });
     const userId = await getUserIdByName(username);
-    if (!userId) return res.status(404).json({ error: "Roblox user not found" });
+    if (!userId) return res.status(404).json({ error: "Roblox user not found: " + username });
     const newRole = await doRankAction(ws, userId, action, rank);
     await db.log.insert({
       workspaceId: req.params.id,
@@ -278,7 +294,10 @@ app.post("/api/ws/:id/rank", authMiddleware, async (req, res) => {
       createdAt: new Date()
     });
     res.json({ success: true, newRank: newRole.name });
-  } catch (e) { res.status(400).json({ error: e.message }); }
+  } catch (e) {
+    console.error("Rank error:", e.message);
+    res.status(400).json({ error: e.message });
+  }
 });
 
 // ── In-game endpoint ──────────────────────────────────────────
@@ -287,7 +306,8 @@ app.post("/api/game/:id/rank", async (req, res) => {
     const ws = await db.workspaces.findOne({ _id: req.params.id });
     if (!ws) return res.status(404).json({ error: "Workspace not found" });
     const { userId, action, rank, by } = req.body;
-    const newRole = await doRankAction(ws, userId, action, rank);
+    if (!userId || !action) return res.status(400).json({ error: "Missing userId or action" });
+    const newRole = await doRankAction(ws, parseInt(userId), action, rank);
     const username = await getUsernameById(userId);
     await db.log.insert({
       workspaceId: req.params.id,
@@ -298,7 +318,10 @@ app.post("/api/game/:id/rank", async (req, res) => {
       createdAt: new Date()
     });
     res.json({ success: true, newRank: newRole.name });
-  } catch (e) { res.status(400).json({ error: e.message }); }
+  } catch (e) {
+    console.error("Game rank error:", e.message);
+    res.status(400).json({ error: e.message });
+  }
 });
 
 // ── Catch-all → SPA ───────────────────────────────────────────
