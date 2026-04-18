@@ -12,10 +12,29 @@
       color: white;
     }
 
+    /* HEADER */
     header {
-      padding: 60px;
-      text-align: center;
-      background: #1e3a8a;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .logo {
+      height: 80px;
+    }
+
+    .title {
+      font-size: 40px;
+      font-weight: bold;
+      color: #22c7c7;
+    }
+
+    .subtitle {
+      color: #ccc;
+      font-size: 18px;
     }
 
     .container {
@@ -25,31 +44,43 @@
     }
 
     .card {
-      background: #111827;
-      padding: 20px;
-      margin: 20px 0;
-      border-radius: 12px;
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 25px;
+      margin: 25px 0;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      margin-top: 0;
     }
 
     input, textarea {
       width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      border-radius: 8px;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 10px;
       border: none;
       background: #0f172a;
       color: white;
+      font-size: 15px;
     }
 
     button {
       width: 100%;
       padding: 12px;
-      background: #0ea5e9;
       border: none;
       border-radius: 10px;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
       color: white;
       font-weight: bold;
       cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      opacity: 0.9;
     }
 
     #adminPanel { display: none; }
@@ -83,23 +114,24 @@
     }
 
     .msg {
-      padding: 8px;
+      padding: 10px;
       margin: 5px 0;
       border-radius: 8px;
+      background: #1e293b;
     }
-
-    .user { background: #1e293b; }
-    .admin { background: #1e3a8a; }
   </style>
 </head>
 
 <body>
 
-<button id="adminBtn" onclick="openLogin()">Admin Login</button>
+<button id="adminBtn" onclick="openLogin()">Admin</button>
 
 <header>
-  <h1>SPS Electrical</h1>
-  <p>Reliable Electrical Services</p>
+  <img src="logo.png" class="logo">
+  <div>
+    <div class="title">Sps</div>
+    <div class="subtitle">Electrical • Est 1989</div>
+  </div>
 </header>
 
 <div class="container">
@@ -111,10 +143,7 @@
     <input id="qname" placeholder="Name">
     <input id="qemail" placeholder="Email">
     <input id="qphone" placeholder="Phone">
-
-    <!-- ADDRESS -->
     <input id="qaddress" placeholder="Full Address">
-
     <textarea id="qmsg" placeholder="Message"></textarea>
 
     <button onclick="sendQuote()">Send Quote</button>
@@ -169,9 +198,9 @@ function login() {
 
 /* QUOTE */
 async function sendQuote() {
-  await fetch('/send-quote', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
+  await fetch("/send-quote", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       name: qname.value,
       email: qemail.value,
@@ -184,9 +213,9 @@ async function sendQuote() {
 
 /* CHAT */
 async function sendChat() {
-  await fetch('/send-message', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
+  await fetch("/send-message", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       name: cname.value,
       message: cmsg.value
@@ -194,18 +223,17 @@ async function sendChat() {
   });
 }
 
-/* ADMIN DATA */
+/* ADMIN */
 async function loadData() {
-  const res = await fetch('/data');
+  const res = await fetch("/data");
   const data = await res.json();
 
   let html = "<h3>Chats</h3>";
 
   for (let user in data.chats) {
     html += `<h4>${user}</h4>`;
-
     data.chats[user].forEach(m => {
-      html += `<div class="msg ${m.sender}"><b>${m.sender}:</b> ${m.message}</div>`;
+      html += `<div class="msg"><b>${m.sender}:</b> ${m.message}</div>`;
     });
   }
 
@@ -213,7 +241,7 @@ async function loadData() {
 
   data.quotes.forEach(q => {
     html += `
-      <div class="msg user">
+      <div class="msg">
         <b>${q.name}</b><br>
         ${q.email}<br>
         ${q.phone}<br>
