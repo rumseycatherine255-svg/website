@@ -1,66 +1,186 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SPS Electrical Chat</title>
-  <style>
-    body { font-family: Arial; background:#0a0f1c; color:white; }
+  <title>SPS Electrical</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    .box {
-      width:300px;
-      position:fixed;
-      bottom:20px;
-      right:20px;
-      background:#111827;
-      padding:10px;
-      border-radius:10px;
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0a0f1c;
+      color: white;
+    }
+
+    header {
+      padding: 80px 20px;
+      text-align: center;
+      background: linear-gradient(135deg, #facc15, #1e3a8a);
+    }
+
+    h1 {
+      font-size: 45px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #111827;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 12px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .service {
+      background: #1f2937;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
     }
 
     input, textarea {
-      width:100%;
-      margin:5px 0;
-      padding:8px;
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border: none;
+      border-radius: 8px;
+      background: #0b1220;
+      color: white;
     }
 
     button {
-      width:100%;
-      padding:8px;
-      background:gold;
-      border:none;
-      cursor:pointer;
+      width: 100%;
+      padding: 12px;
+      background: #facc15;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      border-radius: 8px;
+    }
+
+    button:hover {
+      background: #eab308;
+    }
+
+    /* CHAT BOX */
+    #chat {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 280px;
+      background: #111827;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px black;
+    }
+
+    #chat h4 {
+      margin: 5px 0;
     }
   </style>
 </head>
 
 <body>
 
-<h2 style="text-align:center;">SPS Electrical</h2>
+<header>
+  <h1>SPS Electrical</h1>
+  <p>Reliable Electrical Services in Sussex</p>
+</header>
 
-<div class="box">
-  <h4>💬 Chat</h4>
+<div class="container">
 
-  <input id="name" placeholder="Your name">
-  <textarea id="msg" placeholder="Message"></textarea>
+  <!-- SERVICES -->
+  <div class="card">
+    <h2>Our Services</h2>
+    <div class="grid">
+      <div class="service">House Wiring</div>
+      <div class="service">Lighting Installations</div>
+      <div class="service">Fault Finding</div>
+      <div class="service">Socket Repairs</div>
+      <div class="service">Fuse Board Upgrades</div>
+      <div class="service">Emergency Callouts</div>
+    </div>
+  </div>
 
-  <button onclick="send()">Send</button>
+  <!-- QUOTE -->
+  <div class="card">
+    <h2>Get a Free Quote</h2>
 
-  <p id="status"></p>
+    <input id="qname" placeholder="Full Name">
+    <input id="qemail" placeholder="Email">
+    <input id="qphone" placeholder="Phone Number">
+    <textarea id="qmsg" placeholder="Describe the job"></textarea>
+
+    <button onclick="sendQuote()">Send Quote</button>
+
+    <p id="qstatus"></p>
+  </div>
+
+</div>
+
+<!-- LIVE CHAT -->
+<div id="chat">
+  <h4>💬 Live Chat</h4>
+
+  <input id="cname" placeholder="Your Name">
+  <textarea id="cmsg" placeholder="Message"></textarea>
+
+  <button onclick="sendChat()">Send</button>
+
+  <p id="cstatus"></p>
 </div>
 
 <script>
-async function send() {
-  const res = await fetch('/send-message', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
+
+/* ---------------- QUOTE ---------------- */
+async function sendQuote() {
+  const res = await fetch('/send-quote', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
-      name: name.value,
-      message: msg.value
+      name: qname.value,
+      email: qemail.value,
+      phone: qphone.value,
+      message: qmsg.value
     })
   });
 
   const data = await res.json();
 
-  status.innerText = data.success ? "Sent ✔" : "Failed ❌";
+  qstatus.innerText = data.success
+    ? "Quote sent ✔"
+    : "Failed ❌";
 }
+
+/* ---------------- CHAT ---------------- */
+async function sendChat() {
+  const res = await fetch('/send-message', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: cname.value,
+      message: cmsg.value
+    })
+  });
+
+  const data = await res.json();
+
+  cstatus.innerText = data.success
+    ? "Sent ✔"
+    : "Failed ❌";
+}
+
 </script>
 
 </body>
