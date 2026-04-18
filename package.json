@@ -1,13 +1,10 @@
 {
   "name": "sps-electrical",
   "version": "1.0.0",
-  "description": "SPS Electrical website",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "author": "SPS Electrical",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
     "nodemailer": "^6.9.8",
