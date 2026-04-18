@@ -6,49 +6,114 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
 body {
-  margin:0;
-  font-family: Arial;
-  background:#0b1220;
-  color:white;
+  margin: 0;
+  font-family: Inter, sans-serif;
+  background: #0a0f1c;
+  color: white;
 }
 
+/* HEADER */
 header {
-  background:#2563eb;
-  padding:20px;
-  text-align:center;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 40px;
+  background: rgba(37,99,235,0.9);
+  backdrop-filter: blur(10px);
 }
 
+header h1 {
+  margin:0;
+  font-size:20px;
+  font-weight:700;
+}
+
+/* HERO */
 .hero {
-  padding:50px 20px;
   text-align:center;
-  background:#111827;
+  padding:90px 20px;
+  background: radial-gradient(circle at top, #1d4ed8, #0a0f1c);
 }
 
+.hero h2 {
+  font-size:42px;
+  margin-bottom:10px;
+}
+
+.hero p {
+  opacity:0.8;
+  font-size:18px;
+}
+
+.cta {
+  margin-top:20px;
+  display:inline-block;
+  padding:12px 20px;
+  background:#22c55e;
+  border-radius:8px;
+  color:white;
+  text-decoration:none;
+  font-weight:600;
+}
+
+/* SECTIONS */
 .container {
-  max-width:900px;
+  max-width:1100px;
   margin:auto;
-  padding:20px;
+  padding:40px 20px;
 }
 
+/* SERVICES */
 .grid {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:15px;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
 }
 
 .card {
-  background:#1f2937;
+  background: rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
   padding:20px;
-  border-radius:10px;
+  border-radius:14px;
+  transition:0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color:#3b82f6;
+}
+
+.card h3 {
+  margin-top:0;
+  color:#60a5fa;
+}
+
+/* TRUST BAR */
+.trust {
+  display:flex;
+  justify-content:space-around;
+  margin:40px 0;
+  opacity:0.8;
+  font-size:14px;
+}
+
+/* FORM */
+form {
+  background: rgba(255,255,255,0.05);
+  padding:25px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.1);
 }
 
 input, textarea {
   width:100%;
-  padding:10px;
-  margin:8px 0;
+  padding:12px;
+  margin:10px 0;
   border:none;
-  border-radius:6px;
+  border-radius:8px;
   background:#0b1220;
   color:white;
 }
@@ -56,10 +121,11 @@ input, textarea {
 button {
   width:100%;
   padding:12px;
-  background:#3b82f6;
   border:none;
+  border-radius:8px;
+  background:#3b82f6;
   color:white;
-  border-radius:6px;
+  font-weight:600;
   cursor:pointer;
 }
 
@@ -68,10 +134,26 @@ button:hover {
 }
 
 .status {
-  margin-top:10px;
   text-align:center;
+  margin-top:10px;
 }
 
+/* REVIEWS */
+.reviews {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:15px;
+  margin-top:30px;
+}
+
+.review {
+  background: rgba(255,255,255,0.05);
+  padding:15px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+/* FLOAT BUTTONS */
 .floating {
   position:fixed;
   right:20px;
@@ -84,14 +166,27 @@ button:hover {
 .floating a {
   padding:12px;
   border-radius:50px;
-  color:white;
   text-decoration:none;
-  text-align:center;
+  color:white;
   font-size:14px;
+  text-align:center;
+  font-weight:600;
 }
 
 .call {background:#f59e0b;}
 .wa {background:#22c55e;}
+
+footer {
+  text-align:center;
+  padding:30px;
+  opacity:0.5;
+  font-size:13px;
+}
+
+@media(max-width:600px){
+.hero h2 {font-size:28px;}
+header {padding:15px;}
+}
 </style>
 
 </head>
@@ -99,43 +194,60 @@ button:hover {
 <body>
 
 <header>
-<h1>SPS Electrical</h1>
-<p>Local • Reliable • Professional</p>
+  <h1>SPS Electrical</h1>
+  <div>⚡ Trusted Local Electrician</div>
 </header>
 
-<div class="hero">
-<h2>Electrical Services You Can Trust</h2>
-<p>Fast response & fair pricing</p>
-</div>
+<section class="hero">
+  <h2>Reliable Electrical Services You Can Trust</h2>
+  <p>Fast response • Fair pricing • Fully qualified work</p>
+  <a class="cta" href="#quote">Get a Free Quote</a>
+</section>
 
 <div class="container">
 
-<h2>Services</h2>
+  <h2>Our Services</h2>
+  <div class="grid">
+    <div class="card"><h3>Rewiring</h3><p>Safe full & partial rewires.</p></div>
+    <div class="card"><h3>Lighting</h3><p>Indoor & outdoor installations.</p></div>
+    <div class="card"><h3>Fuse Boards</h3><p>Modern consumer unit upgrades.</p></div>
+    <div class="card"><h3>Fault Finding</h3><p>Fast diagnostics & repair.</p></div>
+  </div>
 
-<div class="grid">
-<div class="card">House Rewiring</div>
-<div class="card">Lighting Installations</div>
-<div class="card">Fuse Board Upgrades</div>
-<div class="card">Fault Finding</div>
+  <div class="trust">
+    <div>✔ Fully Qualified</div>
+    <div>✔ Local Engineer</div>
+    <div>✔ Fast Response</div>
+  </div>
+
+  <h2 id="quote">Request a Quote</h2>
+
+  <form id="quoteForm">
+    <input name="name" placeholder="Your Name" required>
+    <input name="email" placeholder="Your Email" required>
+    <textarea name="message" placeholder="Describe the job..." required></textarea>
+    <button type="submit">Send Quote</button>
+    <div class="status" id="status"></div>
+  </form>
+
+  <h2 style="margin-top:40px;">Customer Reviews</h2>
+
+  <div class="reviews">
+    <div class="review">“Quick and professional service. Highly recommend!”</div>
+    <div class="review">“Sorted my fuse board same day. Brilliant.”</div>
+    <div class="review">“Reliable and honest pricing.”</div>
+  </div>
+
 </div>
 
-<h2 style="margin-top:30px;">Request a Quote</h2>
-
-<form id="quoteForm">
-<input name="name" placeholder="Name" required>
-<input name="email" placeholder="Email" required>
-<textarea name="message" placeholder="Job details..." required></textarea>
-<button type="submit">Send Quote</button>
-<div class="status" id="status"></div>
-</form>
-
-</div>
-
-<!-- Floating buttons -->
 <div class="floating">
-<a class="call" href="tel:+440000000000">📞 Call</a>
-<a class="wa" href="https://wa.me/440000000000">💬 WhatsApp</a>
+  <a class="call" href="tel:+440000000000">📞 Call</a>
+  <a class="wa" href="https://wa.me/440000000000">💬 WhatsApp</a>
 </div>
+
+<footer>
+  © 2026 SPS Electrical • All Rights Reserved
+</footer>
 
 <script>
 const form = document.getElementById("quoteForm");
@@ -155,20 +267,20 @@ form.addEventListener("submit", async (e) => {
   try {
     const res = await fetch("/send-quote", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type":"application/json"},
       body: JSON.stringify(data)
     });
 
     const json = await res.json();
 
-    if (json.success) {
+    if(json.success){
       status.textContent = "✅ Sent successfully!";
       form.reset();
     } else {
       status.textContent = "❌ Failed: " + json.error;
     }
 
-  } catch (err) {
+  } catch(err){
     status.textContent = "❌ Server error";
   }
 });
