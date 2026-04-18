@@ -9,82 +9,87 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 /* -----------------------------
-   SIMPLE "DATABASE" (memory)
+   SIMPLE STORAGE (messages + quotes)
 ------------------------------*/
-let conversations = {};
+let messages = {};
+let quotes = [];
 
 /* -----------------------------
-   HOME PAGE
+   PAGES
 ------------------------------*/
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-/* -----------------------------
-   ADMIN PAGE
-------------------------------*/
 app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
 /* -----------------------------
-   SEND MESSAGE (USER)
+   QUOTE SYSTEM
+------------------------------*/
+app.post("/send-quote", (req, res) => {
+  const { name, email, phone, message } = req.body;
+
+  if (!name || !email || !phone || !message) {
+    return res.json({ success: false });
+  }
+
+  quotes.push({ name, email, phone, message });
+
+  console.log("⚡ QUOTE:", name);
+
+  res.json({ success: true });
+});
+
+/* -----------------------------
+   CHAT SYSTEM
 ------------------------------*/
 app.post("/send-message", (req, res) => {
   const { name, message } = req.body;
 
-  if (!name || !message) {
-    return res.json({ success: false });
-  }
+  if (!messages[name]) messages[name] = [];
 
-  if (!conversations[name]) {
-    conversations[name] = [];
-  }
-
-  conversations[name].push({
+  messages[name].push({
     sender: "user",
     message,
     time: Date.now()
   });
 
-  console.log("💬 USER MESSAGE:", name, message);
+  console.log("💬 MESSAGE:", name);
 
   res.json({ success: true });
 });
 
 /* -----------------------------
-   GET ALL CONVERSATIONS (ADMIN)
+   GET DATA (ADMIN)
 ------------------------------*/
-app.get("/conversations", (req, res) => {
-  res.json(conversations);
+app.get("/data", (req, res) => {
+  res.json({ messages, quotes });
 });
 
 /* -----------------------------
-   REPLY FROM ADMIN
+   ADMIN REPLY
 ------------------------------*/
 app.post("/reply", (req, res) => {
   const { name, message } = req.body;
 
-  if (!conversations[name]) {
-    return res.json({ success: false });
-  }
+  if (!messages[name]) return res.json({ success: false });
 
-  conversations[name].push({
+  messages[name].push({
     sender: "admin",
     message,
     time: Date.now()
   });
 
-  console.log("📨 ADMIN REPLY:", name, message);
-
   res.json({ success: true });
 });
 
 /* -----------------------------
-   START SERVER
+   START
 ------------------------------*/
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-  console.log("🚀 Running on", PORT);
+  console.log("🚀 SPS Electrical running on", PORT);
 });
