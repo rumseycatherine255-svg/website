@@ -8,17 +8,17 @@
     body {
       margin: 0;
       font-family: Arial;
-      background: #070b14;
+      background: #0b1220;
       color: white;
     }
 
     header {
-      padding: 70px 20px;
+      padding: 60px 20px;
       text-align: center;
       background: linear-gradient(135deg, #1e3a8a, #0b1220);
     }
 
-    h1 { margin: 0; font-size: 48px; }
+    h1 { font-size: 42px; margin: 0; }
 
     .container {
       max-width: 900px;
@@ -27,11 +27,10 @@
     }
 
     .card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 14px;
+      background: #111827;
       padding: 20px;
       margin: 20px 0;
-      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
     }
 
     input, textarea {
@@ -40,18 +39,23 @@
       margin: 6px 0;
       border-radius: 8px;
       border: none;
-      background: #111827;
+      background: #0f172a;
       color: white;
     }
 
     button {
       width: 100%;
       padding: 12px;
-      background: gold;
       border: none;
-      font-weight: bold;
-      cursor: pointer;
       border-radius: 10px;
+      background: #0ea5e9;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #0284c7;
     }
 
     #adminPanel {
@@ -76,13 +80,15 @@
 
     #adminBtn {
       position: fixed;
-      top: 15px;
-      right: 15px;
-      background: #facc15;
+      top: 10px;
+      right: 10px;
+      background: gold;
+      color: black;
       padding: 10px;
       border: none;
       cursor: pointer;
       font-weight: bold;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -98,17 +104,34 @@
 
 <div class="container">
 
+  <!-- SERVICES -->
   <div class="card">
     <h2>Services</h2>
-    <p>House Wiring, Lighting, Fault Finding, Repairs</p>
+    <p>House Wiring, Fault Finding, Lighting, Repairs</p>
   </div>
 
+  <!-- QUOTE -->
   <div class="card">
-    <h2>Contact</h2>
-    <input placeholder="Name">
-    <input placeholder="Email">
-    <textarea placeholder="Message"></textarea>
-    <button>Send</button>
+    <h2>Get a Quote</h2>
+
+    <input id="qname" placeholder="Name">
+    <input id="qemail" placeholder="Email">
+    <input id="qphone" placeholder="Phone">
+    <textarea id="qmsg" placeholder="Message"></textarea>
+
+    <button onclick="sendQuote()">Send Quote</button>
+    <p id="qstatus"></p>
+  </div>
+
+  <!-- CHAT -->
+  <div class="card">
+    <h2>Live Chat</h2>
+
+    <input id="cname" placeholder="Your Name">
+    <textarea id="cmsg" placeholder="Message"></textarea>
+
+    <button onclick="sendChat()">Send Message</button>
+    <p id="cstatus"></p>
   </div>
 
 </div>
@@ -118,7 +141,7 @@
   <div class="card">
     <h2>Admin Panel</h2>
     <p>Welcome Paul 👋</p>
-    <p>This is your admin area.</p>
+    <p>This is your dashboard.</p>
   </div>
 </div>
 
@@ -137,6 +160,7 @@
 
 <script>
 
+/* ---------------- LOGIN ---------------- */
 function openLogin() {
   loginBox.style.display = "flex";
 }
@@ -149,6 +173,38 @@ function login() {
   } else {
     msg.innerText = "Wrong login ❌";
   }
+}
+
+/* ---------------- QUOTE ---------------- */
+async function sendQuote() {
+  const res = await fetch('/send-quote', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: qname.value,
+      email: qemail.value,
+      phone: qphone.value,
+      message: qmsg.value
+    })
+  });
+
+  const data = await res.json();
+  qstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
+}
+
+/* ---------------- CHAT ---------------- */
+async function sendChat() {
+  const res = await fetch('/send-message', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: cname.value,
+      message: cmsg.value
+    })
+  });
+
+  const data = await res.json();
+  cstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
 }
 
 </script>
