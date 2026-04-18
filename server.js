@@ -1,76 +1,85 @@
 const express = require("express");
-const bodyParser = require("body-parser");
+const path = require("path");
 const { Resend } = require("resend");
 
 const app = express();
 
-app.use(bodyParser.json());
-app.use(express.static("public"));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-/* IMPORTANT: API KEY */
-const resend = new Resend("YOUR_RESEND_API_KEY");
+/* EMAIL SETUP */
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-/* =========================
-   QUOTE EMAIL ROUTE (FIXED)
-========================= */
+/* STORAGE */
+let chats = {};
+let quotes = [];
+
+/* ---------------- QUOTE (FIXED) ---------------- */
 app.post("/send-quote", async (req, res) => {
+  const { name, email, phone, address, message } = req.body;
+
+  if (!name || !email || !phone || !address || !message) {
+    return res.json({ success: false, error: "Missing fields" });
+  }
+
   try {
-    const { name, email, phone, message } = req.body;
-
-    console.log("QUOTE RECEIVED:", req.body);
-
-    const result = await resend.emails.send({
-      from: "SPS Electrical <onboarding@resend.dev>",
-      to: "YOUR_EMAIL@gmail.com",
-      subject: "New Quote Request - SPS Electrical",
+    const response = await resend.emails.send({
+      from: "SPS <onboarding@resend.dev>",
+      to: process.env.EMAIL || "YOUR_EMAIL@gmail.com",
+      subject: "⚡ NEW QUOTE REQUEST",
       html: `
         <h2>New Quote Request</h2>
-        <p><b>Name:</b> ${name || ""}</p>
-        <p><b>Email:</b> ${email || ""}</p>
-        <p><b>Phone:</b> ${phone || ""}</p>
-        <p><b>Message:</b><br>${message || ""}</p>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Phone:</b> ${phone}</p>
+        <p><b>Address:</b> ${address}</p>
+        <p><b>Message:</b> ${message}</p>
       `
     });
 
-    console.log("RESEND RESULT:", result);
+    console.log("EMAIL SENT:", response);
 
-    return res.json({ success: true });
+    quotes.push({ name, email, phone, address, message });
+
+    res.json({ success: true });
 
   } catch (err) {
-    console.log("RESEND ERROR:", err);
+    console.error("EMAIL FAILED:", err);
 
-    return res.json({
+    res.json({
       success: false,
       error: err.message
     });
   }
 });
 
-/* =========================
-   LIVE CHAT (optional)
-========================= */
-let chats = {};
-
+/* ---------------- CHAT ---------------- */
 app.post("/send-message", (req, res) => {
   const { name, message } = req.body;
 
+  if (!name || !message) {
+    return res.json({ success: false, error: "Missing data" });
+  }
+
   if (!chats[name]) chats[name] = [];
 
-  chats[name].push({ sender: name, message });
+  chats[name].push({
+    sender: "user",
+    message,
+    time: Date.now()
+  });
 
   res.json({ success: true });
 });
 
-/* =========================
-   DATA FOR ADMIN
-========================= */
+/* ---------------- DATA ---------------- */
 app.get("/data", (req, res) => {
-  res.json({ chats });
+  res.json({ chats, quotes });
 });
 
-/* =========================
-   START SERVER
-========================= */
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+/* ---------------- SERVER ---------------- */
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  console.log("🚀 Running on port", PORT);
 });
