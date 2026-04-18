@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { Resend } = require("resend");
 
 const app = express();
 
@@ -8,88 +9,76 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-/* -----------------------------
-   SIMPLE STORAGE (messages + quotes)
-------------------------------*/
-let messages = {};
-let quotes = [];
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-/* -----------------------------
-   PAGES
-------------------------------*/
+// homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
-});
 
-/* -----------------------------
-   QUOTE SYSTEM
-------------------------------*/
-app.post("/send-quote", (req, res) => {
+// ⚡ QUOTE FORM
+app.post("/send-quote", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
-  if (!name || !email || !phone || !message) {
-    return res.json({ success: false });
+  console.log("⚡ QUOTE:", req.body);
+
+  try {
+    await resend.emails.send({
+      from: "SPS Electrical <onboarding@resend.dev>",
+      to: process.env.EMAIL,
+      subject: "New Electrical Quote Request",
+      html: `
+        <h2>New Quote Request</h2>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Phone:</b> ${phone}</p>
+        <p><b>Message:</b><br>${message}</p>
+      `
+    });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.log("QUOTE ERROR:", err);
+    res.json({ success: false, error: err.message });
+  }
+});
+
+
+// 💬 LIVE CHAT SYSTEM
+app.post("/send-chat", async (req, res) => {
+  const { name, message } = req.body;
+
+  console.log("💬 CHAT:", req.body);
+
+  if (!name || !message) {
+    return res.json({ success: false, error: "Missing fields" });
   }
 
-  quotes.push({ name, email, phone, message });
+  try {
+    await resend.emails.send({
+      from: "SPS Chat <onboarding@resend.dev>",
+      to: process.env.EMAIL,
+      subject: `💬 New Chat Message from ${name}`,
+      html: `
+        <h2>New Website Chat</h2>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Message:</b><br>${message}</p>
+      `
+    });
 
-  console.log("⚡ QUOTE:", name);
+    res.json({ success: true });
 
-  res.json({ success: true });
+  } catch (err) {
+    console.log("CHAT ERROR:", err);
+    res.json({ success: false, error: err.message });
+  }
 });
 
-/* -----------------------------
-   CHAT SYSTEM
-------------------------------*/
-app.post("/send-message", (req, res) => {
-  const { name, message } = req.body;
 
-  if (!messages[name]) messages[name] = [];
-
-  messages[name].push({
-    sender: "user",
-    message,
-    time: Date.now()
-  });
-
-  console.log("💬 MESSAGE:", name);
-
-  res.json({ success: true });
-});
-
-/* -----------------------------
-   GET DATA (ADMIN)
-------------------------------*/
-app.get("/data", (req, res) => {
-  res.json({ messages, quotes });
-});
-
-/* -----------------------------
-   ADMIN REPLY
-------------------------------*/
-app.post("/reply", (req, res) => {
-  const { name, message } = req.body;
-
-  if (!messages[name]) return res.json({ success: false });
-
-  messages[name].push({
-    sender: "admin",
-    message,
-    time: Date.now()
-  });
-
-  res.json({ success: true });
-});
-
-/* -----------------------------
-   START
-------------------------------*/
 const PORT = process.env.PORT || 8080;
 
-app.listen(PORT, () => {
-  console.log("🚀 SPS Electrical running on", PORT);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("🚀 Running on", PORT);
 });
