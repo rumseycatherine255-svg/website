@@ -7,65 +7,91 @@
 
 <style>
 body {
-  margin: 0;
+  margin:0;
   font-family: Arial;
-  background: #0b1220;
-  color: white;
+  background:#0b1220;
+  color:white;
 }
 
 header {
-  background: #2563eb;
-  padding: 20px;
-  text-align: center;
+  background:#2563eb;
+  padding:20px;
+  text-align:center;
 }
 
 .hero {
-  text-align: center;
-  padding: 50px 20px;
-  background: #111827;
+  padding:50px 20px;
+  text-align:center;
+  background:#111827;
 }
 
 .container {
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:15px;
 }
 
 .card {
-  background: #1f2937;
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
+  background:#1f2937;
+  padding:20px;
+  border-radius:10px;
 }
 
 input, textarea {
-  width: 100%;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 6px;
-  border: none;
-  background: #0b1220;
-  color: white;
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:none;
+  border-radius:6px;
+  background:#0b1220;
+  color:white;
 }
 
 button {
-  width: 100%;
-  padding: 12px;
-  background: #3b82f6;
-  border: none;
-  color: white;
-  cursor: pointer;
-  border-radius: 6px;
+  width:100%;
+  padding:12px;
+  background:#3b82f6;
+  border:none;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
 }
 
 button:hover {
-  background: #2563eb;
+  background:#2563eb;
 }
 
 .status {
-  text-align: center;
-  margin-top: 10px;
+  margin-top:10px;
+  text-align:center;
 }
+
+.floating {
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.floating a {
+  padding:12px;
+  border-radius:50px;
+  color:white;
+  text-decoration:none;
+  text-align:center;
+  font-size:14px;
+}
+
+.call {background:#f59e0b;}
+.wa {background:#22c55e;}
 </style>
 
 </head>
@@ -73,52 +99,52 @@ button:hover {
 <body>
 
 <header>
-  <h1>SPS Electrical</h1>
+<h1>SPS Electrical</h1>
+<p>Local • Reliable • Professional</p>
 </header>
 
 <div class="hero">
-  <h2>Reliable Electrical Services</h2>
-  <p>Fast • Safe • Professional</p>
+<h2>Electrical Services You Can Trust</h2>
+<p>Fast response & fair pricing</p>
 </div>
 
 <div class="container">
 
-  <div class="card">
-    <h2>Services</h2>
-    <ul>
-      <li>House Rewiring</li>
-      <li>Lighting Installation</li>
-      <li>Fuse Board Upgrades</li>
-      <li>Fault Finding</li>
-    </ul>
-  </div>
+<h2>Services</h2>
 
-  <div class="card">
-    <h2>Request a Quote</h2>
+<div class="grid">
+<div class="card">House Rewiring</div>
+<div class="card">Lighting Installations</div>
+<div class="card">Fuse Board Upgrades</div>
+<div class="card">Fault Finding</div>
+</div>
 
-    <form id="quoteForm">
-      <input name="name" placeholder="Name" required>
-      <input name="email" placeholder="Email" required>
-      <textarea name="message" placeholder="Job details..." required></textarea>
+<h2 style="margin-top:30px;">Request a Quote</h2>
 
-      <button type="submit">Send Quote</button>
-      <div class="status" id="status"></div>
-    </form>
+<form id="quoteForm">
+<input name="name" placeholder="Name" required>
+<input name="email" placeholder="Email" required>
+<textarea name="message" placeholder="Job details..." required></textarea>
+<button type="submit">Send Quote</button>
+<div class="status" id="status"></div>
+</form>
 
-  </div>
+</div>
 
+<!-- Floating buttons -->
+<div class="floating">
+<a class="call" href="tel:+440000000000">📞 Call</a>
+<a class="wa" href="https://wa.me/440000000000">💬 WhatsApp</a>
 </div>
 
 <script>
 const form = document.getElementById("quoteForm");
 const status = document.getElementById("status");
-const button = form.querySelector("button");
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   status.textContent = "Sending...";
-  button.disabled = true;
 
   const data = {
     name: form.name.value,
@@ -145,8 +171,6 @@ form.addEventListener("submit", async (e) => {
   } catch (err) {
     status.textContent = "❌ Server error";
   }
-
-  button.disabled = false;
 });
 </script>
 
