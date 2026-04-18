@@ -13,14 +13,9 @@
     }
 
     header {
-      padding: 80px 20px;
+      padding: 60px;
       text-align: center;
       background: linear-gradient(135deg, #facc15, #1e3a8a);
-    }
-
-    h1 {
-      font-size: 45px;
-      margin: 0;
     }
 
     .container {
@@ -36,27 +31,12 @@
       border-radius: 12px;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-    }
-
-    .service {
-      background: #1f2937;
-      padding: 15px;
-      border-radius: 10px;
-      text-align: center;
-    }
-
     input, textarea {
       width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      border: none;
+      padding: 12px;
+      margin: 10px 0;
       border-radius: 8px;
-      background: #0b1220;
-      color: white;
+      border: none;
     }
 
     button {
@@ -66,7 +46,6 @@
       border: none;
       cursor: pointer;
       font-weight: bold;
-      border-radius: 8px;
     }
 
     button:hover {
@@ -74,7 +53,7 @@
     }
 
     /* CHAT BOX */
-    #chat {
+    #chatBox {
       position: fixed;
       bottom: 20px;
       right: 20px;
@@ -85,8 +64,8 @@
       box-shadow: 0 0 10px black;
     }
 
-    #chat h4 {
-      margin: 5px 0;
+    #chatBox textarea {
+      height: 60px;
     }
   </style>
 </head>
@@ -95,32 +74,19 @@
 
 <header>
   <h1>SPS Electrical</h1>
-  <p>Reliable Electrical Services in Sussex</p>
+  <p>Reliable Electrical Services</p>
 </header>
 
 <div class="container">
 
-  <!-- SERVICES -->
-  <div class="card">
-    <h2>Our Services</h2>
-    <div class="grid">
-      <div class="service">House Wiring</div>
-      <div class="service">Lighting Installations</div>
-      <div class="service">Fault Finding</div>
-      <div class="service">Socket Repairs</div>
-      <div class="service">Fuse Board Upgrades</div>
-      <div class="service">Emergency Callouts</div>
-    </div>
-  </div>
-
   <!-- QUOTE -->
   <div class="card">
-    <h2>Get a Free Quote</h2>
+    <h2>Get a Quote</h2>
 
-    <input id="qname" placeholder="Full Name">
+    <input id="qname" placeholder="Name">
     <input id="qemail" placeholder="Email">
-    <input id="qphone" placeholder="Phone Number">
-    <textarea id="qmsg" placeholder="Describe the job"></textarea>
+    <input id="qphone" placeholder="Phone">
+    <textarea id="qmsg" placeholder="What do you need?"></textarea>
 
     <button onclick="sendQuote()">Send Quote</button>
 
@@ -129,8 +95,8 @@
 
 </div>
 
-<!-- LIVE CHAT -->
-<div id="chat">
+<!-- CHAT BOX -->
+<div id="chatBox">
   <h4>💬 Live Chat</h4>
 
   <input id="cname" placeholder="Your Name">
@@ -143,7 +109,7 @@
 
 <script>
 
-/* ---------------- QUOTE ---------------- */
+// QUOTE
 async function sendQuote() {
   const res = await fetch('/send-quote', {
     method: 'POST',
@@ -157,15 +123,12 @@ async function sendQuote() {
   });
 
   const data = await res.json();
-
-  qstatus.innerText = data.success
-    ? "Quote sent ✔"
-    : "Failed ❌";
+  qstatus.innerText = data.success ? "Quote sent ✔" : "Failed ❌";
 }
 
-/* ---------------- CHAT ---------------- */
+// CHAT
 async function sendChat() {
-  const res = await fetch('/send-message', {
+  const res = await fetch('/send-chat', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
@@ -175,10 +138,7 @@ async function sendChat() {
   });
 
   const data = await res.json();
-
-  cstatus.innerText = data.success
-    ? "Sent ✔"
-    : "Failed ❌";
+  cstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
 }
 
 </script>
