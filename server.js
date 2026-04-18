@@ -16,10 +16,15 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ENV VARIABLES
+// ENV
 const EMAIL = process.env.EMAIL;
 const BREVO_USER = process.env.BREVO_USER;
 const BREVO_PASS = process.env.BREVO_PASS;
+
+// DEBUG (IMPORTANT)
+console.log("EMAIL:", EMAIL);
+console.log("BREVO_USER:", BREVO_USER);
+console.log("BREVO_PASS EXISTS:", !!BREVO_PASS);
 
 // SMTP TRANSPORT (BREVO)
 const transporter = nodemailer.createTransport({
@@ -35,7 +40,8 @@ const transporter = nodemailer.createTransport({
 // VERIFY SMTP ON START
 transporter.verify((error) => {
   if (error) {
-    console.log("❌ SMTP ERROR:", error);
+    console.log("❌ SMTP FAILED:");
+    console.log(error);
   } else {
     console.log("✅ SMTP READY");
   }
@@ -46,14 +52,17 @@ app.get("/test", (req, res) => {
   res.send("Server working");
 });
 
-// SEND QUOTE
+// QUOTE ROUTE
 app.post("/send-quote", async (req, res) => {
   const { name, email, message } = req.body;
 
   console.log("📩 Incoming quote:", req.body);
 
   if (!name || !email || !message) {
-    return res.status(400).json({ success: false, error: "Missing fields" });
+    return res.status(400).json({
+      success: false,
+      error: "Missing fields"
+    });
   }
 
   try {
@@ -73,8 +82,13 @@ Message: ${message}
     return res.json({ success: true });
 
   } catch (err) {
-    console.error("❌ EMAIL ERROR:", err);
-    return res.status(500).json({ success: false, error: err.message });
+    console.log("❌ EMAIL ERROR:");
+    console.log(err);
+
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
 });
 
