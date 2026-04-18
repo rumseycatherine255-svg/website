@@ -13,10 +13,12 @@
     }
 
     header {
-      padding: 60px;
+      padding: 70px 20px;
       text-align: center;
       background: linear-gradient(135deg, #facc15, #1e3a8a);
     }
+
+    h1 { font-size: 42px; }
 
     .container {
       max-width: 900px;
@@ -31,12 +33,25 @@
       border-radius: 12px;
     }
 
+    .services {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .service {
+      background: #1f2937;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
     input, textarea {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
-      border-radius: 8px;
       border: none;
+      border-radius: 8px;
     }
 
     button {
@@ -44,28 +59,14 @@
       padding: 12px;
       background: #facc15;
       border: none;
-      cursor: pointer;
+      color: black;
       font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
     }
 
     button:hover {
       background: #eab308;
-    }
-
-    /* CHAT BOX */
-    #chatBox {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 280px;
-      background: #111827;
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px black;
-    }
-
-    #chatBox textarea {
-      height: 60px;
     }
   </style>
 </head>
@@ -74,73 +75,55 @@
 
 <header>
   <h1>SPS Electrical</h1>
-  <p>Reliable Electrical Services</p>
+  <p>Reliable Domestic & Commercial Electrical Services</p>
 </header>
 
 <div class="container">
 
-  <!-- QUOTE -->
   <div class="card">
-    <h2>Get a Quote</h2>
+    <h2>Our Services</h2>
+    <div class="services">
+      <div class="service">⚡ House Wiring</div>
+      <div class="service">💡 Lighting Installation</div>
+      <div class="service">🔌 Socket Repairs</div>
+      <div class="service">🧰 Fault Finding</div>
+    </div>
+  </div>
 
-    <input id="qname" placeholder="Name">
-    <input id="qemail" placeholder="Email">
-    <input id="qphone" placeholder="Phone">
-    <textarea id="qmsg" placeholder="What do you need?"></textarea>
+  <div class="card">
+    <h2>Get a Free Quote</h2>
 
-    <button onclick="sendQuote()">Send Quote</button>
+    <input id="name" placeholder="Full Name">
+    <input id="email" placeholder="Email">
+    <input id="phone" placeholder="Phone Number">
+    <textarea id="message" placeholder="What do you need done?"></textarea>
 
-    <p id="qstatus"></p>
+    <button onclick="send()">Send Quote</button>
+
+    <p id="status"></p>
   </div>
 
 </div>
 
-<!-- CHAT BOX -->
-<div id="chatBox">
-  <h4>💬 Live Chat</h4>
-
-  <input id="cname" placeholder="Your Name">
-  <textarea id="cmsg" placeholder="Message"></textarea>
-
-  <button onclick="sendChat()">Send</button>
-
-  <p id="cstatus"></p>
-</div>
-
 <script>
-
-// QUOTE
-async function sendQuote() {
+async function send() {
   const res = await fetch('/send-quote', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({
-      name: qname.value,
-      email: qemail.value,
-      phone: qphone.value,
-      message: qmsg.value
+      name: name.value,
+      email: email.value,
+      phone: phone.value,
+      message: message.value
     })
   });
 
   const data = await res.json();
-  qstatus.innerText = data.success ? "Quote sent ✔" : "Failed ❌";
+
+  status.innerText = data.success
+    ? "⚡ Quote sent successfully!"
+    : "❌ Failed: " + data.error;
 }
-
-// CHAT
-async function sendChat() {
-  const res = await fetch('/send-chat', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      name: cname.value,
-      message: cmsg.value
-    })
-  });
-
-  const data = await res.json();
-  cstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
-}
-
 </script>
 
 </body>
