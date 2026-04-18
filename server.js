@@ -1,7 +1,7 @@
-const express = require('express');
-const nodemailer = require('nodemailer');
-const cors = require('cors');
-const path = require('path');
+const express = require("express");
+const nodemailer = require("nodemailer");
+const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
@@ -10,49 +10,55 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve frontend
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
-// Homepage
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ENV
+// ENV CHECK (IMPORTANT)
 const EMAIL = process.env.EMAIL;
 const PASS = process.env.APP_PASSWORD;
 
-// Safety check (VERY IMPORTANT for debugging)
-if (!EMAIL || !PASS) {
-  console.log("❌ Missing EMAIL or APP_PASSWORD in Railway variables");
-}
+console.log("EMAIL EXISTS:", !!EMAIL);
+console.log("PASSWORD EXISTS:", !!PASS);
 
-// Mail setup
+// FIXED TRANSPORT (IMPORTANT CHANGE: NOT service:'gmail')
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: EMAIL,
     pass: PASS
   }
 });
 
-// Test route (debug)
-app.get('/test', (req, res) => {
-  res.send("Server is working");
+// VERIFY CONNECTION ON START
+transporter.verify((error, success) => {
+  if (error) {
+    console.log("❌ SMTP ERROR:", error);
+  } else {
+    console.log("✅ SMTP READY");
+  }
 });
 
-// Quote route
-app.post('/send-quote', async (req, res) => {
+app.get("/test", (req, res) => {
+  res.send("Server working");
+});
+
+app.post("/send-quote", async (req, res) => {
   const { name, email, message } = req.body;
 
   console.log("📩 Incoming quote:", req.body);
 
   if (!name || !email || !message) {
-    return res.status(400).send("Missing fields");
+    return res.status(400).json({ success: false, error: "Missing fields" });
   }
 
   try {
-    await transporter.sendMail({
-      from: `"SPS Electrical Website" <${EMAIL}>`,
+    const info = await transporter.sendMail({
+      from: `"SPS Electrical" <${EMAIL}>`,
       to: EMAIL,
       subject: "New Quote Request",
       text: `
@@ -62,18 +68,23 @@ Message: ${message}
       `
     });
 
-    console.log("✅ Email sent");
+    console.log("✅ EMAIL SENT:", info.messageId);
 
-    return res.status(200).json({ success: true });
+    return res.json({ success: true });
+
   } catch (err) {
-    console.error("❌ Email error:", err);
+    console.error("❌ EMAIL FAILED FULL ERROR:");
+    console.error(err);
 
-    return res.status(500).json({ success: false });
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🚀 Running on port", PORT);
 });
