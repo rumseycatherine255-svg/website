@@ -1,55 +1,137 @@
 const express = require("express");
-const cors = require("cors");
 const path = require("path");
-const { Resend } = require("resend");
 
 const app = express();
 
-app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+/* -----------------------------
+   SIMPLE DATABASE (temporary)
+------------------------------*/
+let chats = {};
+let quotes = [];
 
-// homepage
+/* -----------------------------
+   LOGIN (VERY BASIC - NOT SECURE)
+   admin / paul
+------------------------------*/
+function checkLogin(req) {
+  const { user, pass } = req.body;
+  return user === "admin" && pass === "paul";
+}
+
+/* -----------------------------
+   HOME PAGE
+------------------------------*/
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// quote form
-app.post("/send-quote", async (req, res) => {
-  const { name, email, phone, message } = req.body;
-
-  console.log("⚡ NEW QUOTE:", req.body);
-
-  if (!name || !email || !phone || !message) {
-    return res.json({ success: false, error: "Missing fields" });
-  }
-
-  try {
-    await resend.emails.send({
-      from: "SPS Electrical <onboarding@resend.dev>",
-      to: process.env.EMAIL,
-      subject: "New Electrical Quote Request",
-      html: `
-        <h2>New Quote Request</h2>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Phone:</b> ${phone}</p>
-        <p><b>Message:</b><br>${message}</p>
-      `
-    });
-
-    return res.json({ success: true });
-
-  } catch (err) {
-    console.log("EMAIL ERROR:", err);
-    return res.json({ success: false, error: err.message });
-  }
+/* -----------------------------
+   ADMIN PAGE
+------------------------------*/
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
+/* -----------------------------
+   SEND QUOTE
+------------------------------*/
+app.post("/send-quote", (req, res) => {
+  const { name, email, phone, message } = req.body;
+
+  if (!name || !email || !phone || !message) {
+    return res.json({ success: false });
+  }
+
+  quotes.push({
+    name,
+    email,
+    phone,
+    message,
+    time: Date.now()
+  });
+
+  console.log("⚡ NEW QUOTE:", name);
+
+  res.json({ success: true });
+});
+
+/* -----------------------------
+   SEND CHAT MESSAGE
+------------------------------*/
+app.post("/send-message", (req, res) => {
+  const { name, message } = req.body;
+
+  if (!name || !message) {
+    return res.json({ success: false });
+  }
+
+  if (!chats[name]) {
+    chats[name] = [];
+  }
+
+  chats[name].push({
+    sender: "user",
+    message,
+    time: Date.now()
+  });
+
+  console.log("💬 CHAT:", name, message);
+
+  res.json({ success: true });
+});
+
+/* -----------------------------
+   GET ALL DATA (ADMIN PANEL)
+------------------------------*/
+app.get("/data", (req, res) => {
+  res.json({
+    chats,
+    quotes
+  });
+});
+
+/* -----------------------------
+   ADMIN REPLY
+------------------------------*/
+app.post("/reply", (req, res) => {
+  const { name, message } = req.body;
+
+  if (!chats[name]) {
+    return res.json({ success: false });
+  }
+
+  chats[name].push({
+    sender: "admin",
+    message,
+    time: Date.now()
+  });
+
+  console.log("📩 ADMIN REPLY:", name, message);
+
+  res.json({ success: true });
+});
+
+/* -----------------------------
+   LOGIN CHECK ENDPOINT (optional use)
+------------------------------*/
+app.post("/login", (req, res) => {
+  const { user, pass } = req.body;
+
+  if (user === "admin" && pass === "paul") {
+    return res.json({ success: true });
+  }
+
+  res.json({ success: false });
+});
+
+/* -----------------------------
+   START SERVER
+------------------------------*/
 const PORT = process.env.PORT || 8080;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("⚡ SPS Electrical running on", PORT);
+app.listen(PORT, () => {
+  console.log("🚀 SPS Electrical running on port", PORT);
 });
