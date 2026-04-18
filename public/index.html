@@ -9,7 +9,7 @@
 body {
   margin: 0;
   font-family: Arial;
-  background: #0f172a;
+  background: #0b1220;
   color: white;
 }
 
@@ -19,6 +19,12 @@ header {
   text-align: center;
 }
 
+.hero {
+  text-align: center;
+  padding: 50px 20px;
+  background: #111827;
+}
+
 .container {
   max-width: 900px;
   margin: auto;
@@ -26,18 +32,18 @@ header {
 }
 
 .card {
-  background: #1e293b;
+  background: #1f2937;
   padding: 20px;
-  margin: 10px 0;
   border-radius: 10px;
+  margin-bottom: 20px;
 }
 
 input, textarea {
   width: 100%;
   padding: 10px;
   margin: 8px 0;
+  border-radius: 6px;
   border: none;
-  border-radius: 5px;
   background: #0b1220;
   color: white;
 }
@@ -49,7 +55,7 @@ button {
   border: none;
   color: white;
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 6px;
 }
 
 button:hover {
@@ -61,22 +67,27 @@ button:hover {
   margin-top: 10px;
 }
 </style>
+
 </head>
 
 <body>
 
 <header>
   <h1>SPS Electrical</h1>
-  <p>Reliable Electrical Services</p>
 </header>
+
+<div class="hero">
+  <h2>Reliable Electrical Services</h2>
+  <p>Fast • Safe • Professional</p>
+</div>
 
 <div class="container">
 
   <div class="card">
     <h2>Services</h2>
     <ul>
-      <li>Rewiring</li>
-      <li>Lighting</li>
+      <li>House Rewiring</li>
+      <li>Lighting Installation</li>
       <li>Fuse Board Upgrades</li>
       <li>Fault Finding</li>
     </ul>
@@ -86,13 +97,14 @@ button:hover {
     <h2>Request a Quote</h2>
 
     <form id="quoteForm">
-      <input name="name" placeholder="Your Name" required>
-      <input name="email" placeholder="Your Email" required>
-      <textarea name="message" placeholder="Describe the job..." required></textarea>
+      <input name="name" placeholder="Name" required>
+      <input name="email" placeholder="Email" required>
+      <textarea name="message" placeholder="Job details..." required></textarea>
 
       <button type="submit">Send Quote</button>
       <div class="status" id="status"></div>
     </form>
+
   </div>
 
 </div>
@@ -121,17 +133,17 @@ form.addEventListener("submit", async (e) => {
       body: JSON.stringify(data)
     });
 
-    const result = await res.json();
+    const json = await res.json();
 
-    if (result.success) {
+    if (json.success) {
       status.textContent = "✅ Sent successfully!";
       form.reset();
     } else {
-      status.textContent = "❌ Failed to send.";
+      status.textContent = "❌ Failed: " + json.error;
     }
 
   } catch (err) {
-    status.textContent = "❌ Server error.";
+    status.textContent = "❌ Server error";
   }
 
   button.disabled = false;
