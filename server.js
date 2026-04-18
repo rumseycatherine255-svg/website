@@ -9,6 +9,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve frontend
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
@@ -24,26 +25,34 @@ app.get("/test", (req, res) => {
   res.send("Server working");
 });
 
-// SEND QUOTE (NO SMTP)
+// SEND QUOTE
 app.post("/send-quote", async (req, res) => {
-  const { name, email, message } = req.body;
+  const { name, email, phone, message } = req.body;
 
   console.log("📩 Incoming quote:", req.body);
 
-  if (!name || !email || !message) {
-    return res.status(400).json({ success: false, error: "Missing fields" });
+  if (!name || !email || !phone || !message) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing fields"
+    });
   }
 
   try {
     await resend.emails.send({
       from: "SPS Electrical <onboarding@resend.dev>",
       to: EMAIL,
-      subject: "New SPS Electrical Quote",
+      subject: "New SPS Electrical Quote Request",
       html: `
         <h2>New Quote Request</h2>
+
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
-        <p><b>Message:</b> ${message}</p>
+        <p><b>Phone:</b> ${phone}</p>
+
+        <hr>
+
+        <p><b>Message:</b><br>${message}</p>
       `
     });
 
@@ -51,7 +60,11 @@ app.post("/send-quote", async (req, res) => {
 
   } catch (err) {
     console.error("❌ EMAIL ERROR:", err);
-    return res.status(500).json({ success: false, error: err.message });
+
+    return res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
 });
 
