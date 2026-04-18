@@ -1,85 +1,122 @@
 const express = require("express");
-const path = require("path");
+const bodyParser = require("body-parser");
 const { Resend } = require("resend");
 
 const app = express();
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+/* ======================
+   MIDDLEWARE
+====================== */
+app.use(bodyParser.json());
+app.use(express.static("public"));
 
-/* EMAIL SETUP */
-const resend = new Resend(process.env.RESEND_API_KEY);
+/* ======================
+   RESEND SETUP
+====================== */
+const resend = new Resend("YOUR_RESEND_API_KEY");
 
-/* STORAGE */
-let chats = {};
-let quotes = [];
-
-/* ---------------- QUOTE (FIXED) ---------------- */
+/* ======================
+   QUOTE EMAIL ROUTE
+====================== */
 app.post("/send-quote", async (req, res) => {
-  const { name, email, phone, address, message } = req.body;
-
-  if (!name || !email || !phone || !address || !message) {
-    return res.json({ success: false, error: "Missing fields" });
-  }
-
   try {
-    const response = await resend.emails.send({
-      from: "SPS <onboarding@resend.dev>",
-      to: process.env.EMAIL || "YOUR_EMAIL@gmail.com",
-      subject: "⚡ NEW QUOTE REQUEST",
+    const { name, email, phone, message } = req.body;
+
+    await resend.emails.send({
+      from: "SPS Electrical <onboarding@resend.dev>",
+      to: "YOUR_EMAIL@gmail.com",
+      subject: "New Electrical Quote Request",
       html: `
         <h2>New Quote Request</h2>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Phone:</b> ${phone}</p>
-        <p><b>Address:</b> ${address}</p>
-        <p><b>Message:</b> ${message}</p>
+
+        <p><b>Name:</b> ${name || "Not provided"}</p>
+        <p><b>Email:</b> ${email || "Not provided"}</p>
+        <p><b>Phone:</b> ${phone || "Not provided"}</p>
+
+        <hr>
+
+        <p><b>Message:</b></p>
+        <p>${message || "No message provided"}</p>
       `
     });
 
-    console.log("EMAIL SENT:", response);
-
-    quotes.push({ name, email, phone, address, message });
-
-    res.json({ success: true });
+    return res.json({ success: true });
 
   } catch (err) {
-    console.error("EMAIL FAILED:", err);
-
-    res.json({
-      success: false,
-      error: err.message
-    });
+    console.log("Quote Email Error:", err);
+    return res.json({ success: false, error: "Email failed to send" });
   }
 });
 
-/* ---------------- CHAT ---------------- */
+/* ======================
+   LIVE CHAT ENDPOINT
+   (stores in memory - upgrade later if needed)
+====================== */
+let chats = {};
+
 app.post("/send-message", (req, res) => {
   const { name, message } = req.body;
 
   if (!name || !message) {
-    return res.json({ success: false, error: "Missing data" });
+    return res.json({ success: false });
   }
 
   if (!chats[name]) chats[name] = [];
 
   chats[name].push({
-    sender: "user",
-    message,
-    time: Date.now()
+    sender: name,
+    message
   });
 
-  res.json({ success: true });
+  return res.json({ success: true });
 });
 
-/* ---------------- DATA ---------------- */
+/* ======================
+   GET DATA FOR ADMIN PANEL
+====================== */
 app.get("/data", (req, res) => {
-  res.json({ chats, quotes });
+  res.json({
+    chats
+  });
 });
 
-/* ---------------- SERVER ---------------- */
-const PORT = process.env.PORT || 8080;
+/* ======================
+   AI ENDPOINT (OPTIONAL)
+   (simple fallback AI so frontend doesn't break)
+====================== */
+app.post("/ai", (req, res) => {
+  const msg = (req.body.message || "").toLowerCase();
+
+  let reply = "I’m not fully sure — could you explain a bit more?";
+
+  if (msg.includes("light")) {
+    reply = "LED lighting is usually the best option for efficiency and lifespan.";
+  }
+
+  if (msg.includes("socket")) {
+    reply = "Double sockets or USB sockets are standard modern upgrades.";
+  }
+
+  if (msg.includes("tripping")) {
+    reply = "Tripping usually means a fault or overload — it should be tested properly.";
+  }
+
+  if (msg.includes("flicker")) {
+    reply = "Flickering lights often come from loose connections or circuit issues.";
+  }
+
+  if (msg.includes("hello") || msg.includes("hi")) {
+    reply = "Hi — how can I help with your electrical issue?";
+  }
+
+  return res.json({ reply });
+});
+
+/* ======================
+   START SERVER
+====================== */
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("🚀 Running on port", PORT);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
