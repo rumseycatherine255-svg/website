@@ -19,15 +19,23 @@
       width: 100%;
       display: flex;
       justify-content: space-between;
-      padding: 12px 18px;
+      padding: 12px 16px;
       background: #020617;
       z-index: 1000;
+      box-sizing: border-box;
     }
 
-    .brand { color: #38bdf8; font-weight: bold; }
+    .brand {
+      color: #38bdf8;
+      font-weight: bold;
+    }
+
+    .topBtns {
+      display: flex;
+      gap: 8px;
+    }
 
     .topBtns button {
-      margin-left: 6px;
       width: 34px;
       height: 34px;
       border-radius: 8px;
@@ -39,19 +47,25 @@
     .adminBtn { background: gold; }
 
     /* PAGES */
-    .page { display: none; padding-top: 80px; }
-    .active { display: block; }
+    .page {
+      display: none;
+      padding-top: 80px;
+    }
+
+    .active {
+      display: block;
+    }
 
     .container {
       max-width: 900px;
       margin: auto;
-      padding: 20px;
+      padding: 15px;
     }
 
     .section {
       background: #111827;
-      padding: 20px;
-      margin: 20px 0;
+      padding: 18px;
+      margin: 18px 0;
       border-radius: 12px;
     }
 
@@ -63,6 +77,7 @@
       border: none;
       background: #020617;
       color: white;
+      box-sizing: border-box;
     }
 
     button.full {
@@ -73,20 +88,33 @@
       background: #38bdf8;
       color: black;
       cursor: pointer;
+      font-weight: bold;
     }
 
     /* CHAT UI */
-    .chat { max-width: 800px; margin: auto; padding: 20px; }
+    .chat {
+      max-width: 800px;
+      margin: auto;
+      padding: 15px;
+    }
 
     .msg {
       margin: 10px 0;
       padding: 12px;
       border-radius: 10px;
-      max-width: 80%;
+      max-width: 85%;
+      word-wrap: break-word;
     }
 
-    .user { background: #38bdf8; color: black; margin-left: auto; }
-    .ai { background: #1e293b; }
+    .user {
+      background: #38bdf8;
+      color: black;
+      margin-left: auto;
+    }
+
+    .ai {
+      background: #1e293b;
+    }
 
     .inputBox {
       position: fixed;
@@ -95,16 +123,20 @@
       display: flex;
       padding: 10px;
       background: #020617;
+      box-sizing: border-box;
     }
 
-    .inputBox input { flex: 1; }
+    .inputBox input {
+      flex: 1;
+    }
 
     .inputBox button {
       padding: 12px;
-      background: #38bdf8;
-      border: none;
       margin-left: 6px;
       border-radius: 8px;
+      border: none;
+      background: #38bdf8;
+      color: black;
     }
 
   </style>
@@ -115,27 +147,44 @@
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="brand">SPS Electrical</div>
+
   <div class="topBtns">
     <button class="aiBtn" onclick="showPage('ai')">AI</button>
     <button class="adminBtn">🔐</button>
   </div>
 </div>
 
-<!-- HOME -->
+<!-- HOME PAGE -->
 <div id="home" class="page active">
   <div class="container">
 
+    <!-- ABOUT -->
     <div class="section">
       <h2>About SPS Electrical</h2>
-      <p>Run by Paul, a certified electrician with years of experience in domestic electrical work.</p>
-      <p>All work is carried out personally to ensure consistent quality and safety.</p>
+      <p>Run by Paul, a fully certified electrician based in Sussex with years of experience in domestic electrical work.</p>
+      <p>All work is carried out personally to ensure high standards and safety compliance.</p>
+      <p>From fault finding to full installations and rewires.</p>
+    </div>
+
+    <!-- QUOTE (RESTORED) -->
+    <div class="section">
+      <h2>Request a Quote</h2>
+
+      <input id="qname" placeholder="Name">
+      <input id="qemail" placeholder="Email">
+      <input id="qphone" placeholder="Phone">
+      <textarea id="qmsg" placeholder="Describe the work..."></textarea>
+
+      <button class="full" onclick="sendQuote()">Send Quote</button>
     </div>
 
     <!-- LIVE CHAT -->
     <div class="section">
       <h2>Live Chat</h2>
+
       <input id="cname" placeholder="Name">
       <textarea id="cmsg" placeholder="Message"></textarea>
+
       <button class="full" onclick="sendChat()">Send Message</button>
     </div>
 
@@ -154,32 +203,43 @@
 
 <script>
 
-/* NAVIGATION */
+/* NAV */
 function showPage(p) {
   document.querySelectorAll(".page").forEach(x => x.classList.remove("active"));
   document.getElementById(p).classList.add("active");
 }
 
-/* ===================== */
-/* 🔌 LIVE CHAT SYSTEM */
-/* ===================== */
+/* QUOTE SYSTEM */
+async function sendQuote() {
+  await fetch("/send-quote", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      name: qname.value,
+      email: qemail.value,
+      phone: qphone.value,
+      message: qmsg.value
+    })
+  });
+
+  alert("Quote sent ✔");
+}
+
+/* LIVE CHAT */
 async function sendChat() {
   await fetch("/send-message", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
-      name: document.getElementById("cname").value,
-      message: document.getElementById("cmsg").value
+      name: cname.value,
+      message: cmsg.value
     })
   });
 
   alert("Message sent ✔");
 }
 
-/* ===================== */
-/* 🤖 AI CHAT SYSTEM */
-/* ===================== */
-
+/* AI SYSTEM */
 let context = "";
 
 function send() {
@@ -192,7 +252,7 @@ function send() {
 
   setTimeout(() => {
     addMsg(ai(text.toLowerCase()), "ai");
-  }, 300);
+  }, 400);
 }
 
 function addMsg(text, type) {
@@ -203,29 +263,26 @@ function addMsg(text, type) {
   div.scrollIntoView();
 }
 
+/* SMART AI */
 function ai(q) {
 
-  /* GREETING */
   if (/^(hi|hello|hey)/.test(q)) return "Hi — what do you need help with?";
 
-  /* MEMORY */
   if (q.includes("light")) context = "lighting";
   if (q.includes("socket")) context = "socket";
 
-  /* FOLLOW UPS */
   if (q.includes("which")) {
-    if (context === "lighting") return "LED downlights are usually the best choice.";
+    if (context === "lighting") return "LED downlights are usually best.";
     if (context === "socket") return "Double sockets or USB sockets are most common.";
   }
 
-  /* HELP */
-  if (q.includes("light")) return "LED lighting is the best option for most homes.";
-  if (q.includes("socket")) return "Standard double sockets are most common.";
+  if (q.includes("light")) return "LED lighting is efficient and long-lasting.";
+  if (q.includes("socket")) return "Standard double sockets are common.";
   if (q.includes("tripping")) return "Tripping usually means a fault or overload.";
-  if (q.includes("flicker")) return "Flickering lights often mean loose connections.";
+  if (q.includes("flicker")) return "Flickering often means loose connections.";
+  if (q.includes("no power")) return "Could be a circuit fault or supply issue.";
 
-  /* DEFAULT */
-  return "If you can describe the issue a bit more, I can guide you better.";
+  return "If you describe it a bit more, I can guide you better.";
 }
 
 </script>
