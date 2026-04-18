@@ -38,19 +38,19 @@
       font-size: 18px;
     }
 
-    /* 🔥 ULTRA SMALL ADMIN BUTTON */
+    /* ADMIN BUTTON (VERY SMALL) */
     #adminBtn {
       position: fixed;
       top: 10px;
       right: 10px;
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       padding: 0;
-      border-radius: 8px;
+      border-radius: 7px;
       background: linear-gradient(135deg, gold, orange);
       border: none;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       z-index: 1000;
 
       display: flex;
@@ -103,6 +103,13 @@
 
     button:hover {
       opacity: 0.9;
+    }
+
+    /* ABOUT SECTION */
+    .card p {
+      color: #ccc;
+      line-height: 1.6;
+      font-size: 15px;
     }
 
     /* EXAMPLES */
@@ -171,11 +178,10 @@
         height: 70px;
       }
 
-      /* EVEN SMALLER ADMIN BUTTON */
       #adminBtn {
-        width: 26px;
-        height: 26px;
-        font-size: 11px;
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
         top: 8px;
         right: 8px;
       }
@@ -201,7 +207,7 @@
 
 <body>
 
-<!-- 🔐 ICON BUTTON -->
+<!-- 🔐 ADMIN ICON BUTTON -->
 <button id="adminBtn" onclick="openLogin()">🔐</button>
 
 <header>
@@ -214,23 +220,50 @@
 
 <div class="container">
 
+  <!-- ⭐ ABOUT PAUL SECTION -->
+  <div class="card">
+    <h2>About SPS Electrical</h2>
+
+    <p>
+      SPS Electrical is a trusted, independent electrical service run by Paul, a fully certified electrician with years of hands-on experience.
+      Based in Sussex, I provide reliable, high-quality electrical work for domestic customers, covering everything from small repairs and fault finding
+      to full installations and upgrades.
+    </p>
+
+    <p>
+      As a sole trader, every job is handled personally by me — ensuring consistent workmanship, attention to detail, and a friendly, honest service.
+      No call centres, no subcontractors — just direct, professional electrical work you can rely on.
+    </p>
+
+    <p>
+      I take pride in safe, compliant installations and clear communication, with fair pricing and a strong focus on customer satisfaction.
+    </p>
+  </div>
+
+  <!-- QUOTE -->
   <div class="card">
     <h2>Get a Quote</h2>
+
     <input id="qname" placeholder="Name">
     <input id="qemail" placeholder="Email">
     <input id="qphone" placeholder="Phone">
     <input id="qaddress" placeholder="Full Address">
     <textarea id="qmsg" placeholder="Message"></textarea>
+
     <button onclick="sendQuote()">Send Quote</button>
   </div>
 
+  <!-- CHAT -->
   <div class="card">
     <h2>Live Chat</h2>
+
     <input id="cname" placeholder="Name">
     <textarea id="cmsg" placeholder="Message"></textarea>
+
     <button onclick="sendChat()">Send Message</button>
   </div>
 
+  <!-- EXAMPLES -->
   <div class="card">
     <h2>Examples</h2>
 
@@ -240,7 +273,6 @@
       <div class="example-box">Image 3</div>
       <div class="example-box">Image 4</div>
     </div>
-
   </div>
 
 </div>
