@@ -1,31 +1,232 @@
-app.post("/send-quote", async (req, res) => {
-  const { name, email, phone, address, message } = req.body;
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SPS Electrical</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  if (!name || !email || !phone || !address || !message) {
-    return res.json({ success: false, error: "Missing fields" });
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0b1220;
+      color: white;
+    }
+
+    header {
+      padding: 60px;
+      text-align: center;
+      background: #1e3a8a;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #111827;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 12px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 8px;
+      border: none;
+      background: #0f172a;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #0ea5e9;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #adminPanel { display: none; }
+
+    #loginBox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #loginInner {
+      width: 300px;
+      background: #111827;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    #adminBtn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: gold;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .msg {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 8px;
+    }
+
+    .user { background: #1e293b; }
+    .admin { background: #1e3a8a; }
+  </style>
+</head>
+
+<body>
+
+<button id="adminBtn" onclick="openLogin()">Admin Login</button>
+
+<header>
+  <h1>SPS Electrical</h1>
+  <p>Reliable Electrical Services</p>
+</header>
+
+<div class="container">
+
+  <!-- QUOTE -->
+  <div class="card">
+    <h2>Get a Quote</h2>
+
+    <input id="qname" placeholder="Name">
+    <input id="qemail" placeholder="Email">
+    <input id="qphone" placeholder="Phone">
+
+    <!-- ADDRESS -->
+    <input id="qaddress" placeholder="Full Address">
+
+    <textarea id="qmsg" placeholder="Message"></textarea>
+
+    <button onclick="sendQuote()">Send Quote</button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="card">
+    <h2>Live Chat</h2>
+
+    <input id="cname" placeholder="Name">
+    <textarea id="cmsg" placeholder="Message"></textarea>
+
+    <button onclick="sendChat()">Send</button>
+  </div>
+
+</div>
+
+<!-- ADMIN -->
+<div id="adminPanel" class="container">
+  <div class="card">
+    <h2>Admin Panel</h2>
+
+    <button onclick="loadData()">Refresh</button>
+
+    <div id="output"></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginBox">
+  <div id="loginInner">
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<script>
+
+/* LOGIN */
+function openLogin() {
+  loginBox.style.display = "flex";
+}
+
+function login() {
+  if (user.value === "paul" && pass.value === "admin") {
+    loginBox.style.display = "none";
+    adminPanel.style.display = "block";
+    loadData();
   }
+}
 
-  quotes.push({ name, email, phone, address, message });
+/* QUOTE */
+async function sendQuote() {
+  await fetch('/send-quote', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: qname.value,
+      email: qemail.value,
+      phone: qphone.value,
+      address: qaddress.value,
+      message: qmsg.value
+    })
+  });
+}
 
-  try {
-    await resend.emails.send({
-      from: "SPS Electrical <onboarding@resend.dev>",
-      to: process.env.EMAIL,
-      subject: "⚡ New Quote Request",
-      html: `
-        <h2>New Quote Request</h2>
-        <p><b>Name:</b> ${name}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Phone:</b> ${phone}</p>
-        <p><b>Address:</b> ${address}</p>
-        <p><b>Message:</b> ${message}</p>
-      `
+/* CHAT */
+async function sendChat() {
+  await fetch('/send-message', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: cname.value,
+      message: cmsg.value
+    })
+  });
+}
+
+/* ADMIN DATA */
+async function loadData() {
+  const res = await fetch('/data');
+  const data = await res.json();
+
+  let html = "<h3>Chats</h3>";
+
+  for (let user in data.chats) {
+    html += `<h4>${user}</h4>`;
+
+    data.chats[user].forEach(m => {
+      html += `<div class="msg ${m.sender}"><b>${m.sender}:</b> ${m.message}</div>`;
     });
-
-    res.json({ success: true });
-
-  } catch (err) {
-    console.log(err);
-    res.json({ success: false });
   }
-});
+
+  html += "<h3>Quotes</h3>";
+
+  data.quotes.forEach(q => {
+    html += `
+      <div class="msg user">
+        <b>${q.name}</b><br>
+        ${q.email}<br>
+        ${q.phone}<br>
+        ${q.address}<br>
+        ${q.message}
+      </div>
+    `;
+  });
+
+  output.innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>
