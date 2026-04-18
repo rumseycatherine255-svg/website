@@ -7,46 +7,79 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+/* EMAIL SETUP */
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+/* STORAGE */
 let chats = {};
 let quotes = [];
 
-/* QUOTE */
+/* ---------------- QUOTE (FIXED) ---------------- */
 app.post("/send-quote", async (req, res) => {
   const { name, email, phone, address, message } = req.body;
 
-  quotes.push({ name, email, phone, address, message });
+  if (!name || !email || !phone || !address || !message) {
+    return res.json({ success: false, error: "Missing fields" });
+  }
 
-  await resend.emails.send({
-    from: "SPS <onboarding@resend.dev>",
-    to: process.env.EMAIL,
-    subject: "New Quote",
-    html: `
-      <p>${name}</p>
-      <p>${email}</p>
-      <p>${phone}</p>
-      <p>${address}</p>
-      <p>${message}</p>
-    `
+  try {
+    const response = await resend.emails.send({
+      from: "SPS <onboarding@resend.dev>",
+      to: process.env.EMAIL || "YOUR_EMAIL@gmail.com",
+      subject: "⚡ NEW QUOTE REQUEST",
+      html: `
+        <h2>New Quote Request</h2>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Phone:</b> ${phone}</p>
+        <p><b>Address:</b> ${address}</p>
+        <p><b>Message:</b> ${message}</p>
+      `
+    });
+
+    console.log("EMAIL SENT:", response);
+
+    quotes.push({ name, email, phone, address, message });
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error("EMAIL FAILED:", err);
+
+    res.json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/* ---------------- CHAT ---------------- */
+app.post("/send-message", (req, res) => {
+  const { name, message } = req.body;
+
+  if (!name || !message) {
+    return res.json({ success: false, error: "Missing data" });
+  }
+
+  if (!chats[name]) chats[name] = [];
+
+  chats[name].push({
+    sender: "user",
+    message,
+    time: Date.now()
   });
 
   res.json({ success: true });
 });
 
-/* CHAT */
-app.post("/send-message", (req, res) => {
-  const { name, message } = req.body;
-
-  if (!chats[name]) chats[name] = [];
-  chats[name].push({ sender: "user", message });
-
-  res.json({ success: true });
-});
-
-/* DATA */
+/* ---------------- DATA ---------------- */
 app.get("/data", (req, res) => {
   res.json({ chats, quotes });
 });
 
-app.listen(8080, () => console.log("Running on 8080"));
+/* ---------------- SERVER ---------------- */
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  console.log("🚀 Running on port", PORT);
+});
