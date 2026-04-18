@@ -5,68 +5,148 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
+    :root {
+      --bg: #070b14;
+      --card: rgba(255,255,255,0.05);
+      --stroke: rgba(255,255,255,0.08);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #facc15;
+      --accent2: #1e3a8a;
+    }
+
     body {
       margin: 0;
-      font-family: Arial;
-      background: #0a0f1c;
-      color: white;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #111827, var(--bg));
+      color: var(--text);
     }
 
     header {
-      padding: 70px 20px;
+      padding: 90px 20px;
       text-align: center;
-      background: linear-gradient(135deg, #facc15, #1e3a8a);
+      background: linear-gradient(135deg, var(--accent2), #0b1220);
+      position: relative;
+      overflow: hidden;
     }
 
-    h1 { font-size: 42px; }
+    header::after {
+      content: "";
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: var(--accent);
+      filter: blur(120px);
+      top: -150px;
+      right: -150px;
+      opacity: 0.3;
+    }
+
+    h1 {
+      font-size: 52px;
+      margin: 0;
+      letter-spacing: 1px;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 10px;
+      font-size: 18px;
+    }
 
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: auto;
       padding: 20px;
     }
 
     .card {
-      background: #111827;
-      padding: 20px;
-      margin: 20px 0;
-      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      padding: 25px;
+      margin: 25px 0;
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
 
-    .services {
+    .card h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
     }
 
     .service {
-      background: #1f2937;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--stroke);
       padding: 15px;
-      border-radius: 10px;
+      border-radius: 12px;
       text-align: center;
+      transition: 0.2s;
+    }
+
+    .service:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
     }
 
     input, textarea {
       width: 100%;
       padding: 12px;
-      margin: 10px 0;
-      border: none;
-      border-radius: 8px;
+      margin: 8px 0;
+      border-radius: 10px;
+      border: 1px solid var(--stroke);
+      background: rgba(0,0,0,0.3);
+      color: white;
+      outline: none;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--accent);
     }
 
     button {
       width: 100%;
-      padding: 12px;
-      background: #facc15;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--accent), #eab308);
       border: none;
-      color: black;
-      font-weight: bold;
       cursor: pointer;
-      border-radius: 8px;
+      font-weight: bold;
+      border-radius: 10px;
+      transition: 0.2s;
     }
 
     button:hover {
-      background: #eab308;
+      transform: scale(1.02);
+    }
+
+    /* CHAT */
+    #chat {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
+      background: rgba(17,24,39,0.9);
+      border: 1px solid var(--stroke);
+      padding: 12px;
+      border-radius: 14px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    #chat h4 {
+      margin: 5px 0 10px;
+      color: var(--accent);
+    }
+
+    #qstatus, #cstatus {
+      font-size: 12px;
+      color: var(--muted);
     }
   </style>
 </head>
@@ -75,55 +155,82 @@
 
 <header>
   <h1>SPS Electrical</h1>
-  <p>Reliable Domestic & Commercial Electrical Services</p>
+  <p>Reliable • Professional • Trusted in Sussex</p>
 </header>
 
 <div class="container">
 
   <div class="card">
     <h2>Our Services</h2>
-    <div class="services">
-      <div class="service">⚡ House Wiring</div>
-      <div class="service">💡 Lighting Installation</div>
-      <div class="service">🔌 Socket Repairs</div>
-      <div class="service">🧰 Fault Finding</div>
+    <div class="grid">
+      <div class="service">House Wiring</div>
+      <div class="service">Lighting Installations</div>
+      <div class="service">Fault Finding</div>
+      <div class="service">Socket Repairs</div>
+      <div class="service">Fuse Board Upgrades</div>
+      <div class="service">Emergency Callouts</div>
     </div>
   </div>
 
   <div class="card">
     <h2>Get a Free Quote</h2>
 
-    <input id="name" placeholder="Full Name">
-    <input id="email" placeholder="Email">
-    <input id="phone" placeholder="Phone Number">
-    <textarea id="message" placeholder="What do you need done?"></textarea>
+    <input id="qname" placeholder="Full Name">
+    <input id="qemail" placeholder="Email">
+    <input id="qphone" placeholder="Phone Number">
+    <textarea id="qmsg" placeholder="Describe the job"></textarea>
 
-    <button onclick="send()">Send Quote</button>
-
-    <p id="status"></p>
+    <button onclick="sendQuote()">Send Quote</button>
+    <p id="qstatus"></p>
   </div>
 
 </div>
 
+<!-- CHAT -->
+<div id="chat">
+  <h4>💬 Live Chat</h4>
+
+  <input id="cname" placeholder="Your Name">
+  <textarea id="cmsg" placeholder="Message"></textarea>
+
+  <button onclick="sendChat()">Send</button>
+  <p id="cstatus"></p>
+</div>
+
 <script>
-async function send() {
+
+/* DO NOT CHANGE (kept identical) */
+
+async function sendQuote() {
   const res = await fetch('/send-quote', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
-      name: name.value,
-      email: email.value,
-      phone: phone.value,
-      message: message.value
+      name: qname.value,
+      email: qemail.value,
+      phone: qphone.value,
+      message: qmsg.value
     })
   });
 
   const data = await res.json();
-
-  status.innerText = data.success
-    ? "⚡ Quote sent successfully!"
-    : "❌ Failed: " + data.error;
+  qstatus.innerText = data.success ? "Quote sent ✔" : "Failed ❌";
 }
+
+async function sendChat() {
+  const res = await fetch('/send-message', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: cname.value,
+      message: cmsg.value
+    })
+  });
+
+  const data = await res.json();
+  cstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
+}
+
 </script>
 
 </body>
