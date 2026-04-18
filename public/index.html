@@ -12,7 +12,6 @@
       background: radial-gradient(circle at top left, #1e3a8a, #020617);
     }
 
-    /* ADMIN BUTTON */
     #adminBtn {
       position: fixed;
       top: 20px;
@@ -26,7 +25,6 @@
       color: black;
     }
 
-    /* HEADER */
     header {
       padding: 80px 60px 40px;
     }
@@ -46,14 +44,12 @@
       color: #ccc;
     }
 
-    /* CONTAINER */
     .container {
       max-width: 900px;
       margin: auto;
       padding: 20px;
     }
 
-    /* CARD STYLE */
     .card {
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(15px);
@@ -61,11 +57,6 @@
       padding: 30px;
       margin: 25px 0;
       box-shadow: 0 0 40px rgba(0,0,0,0.4);
-    }
-
-    h2 {
-      margin-top: 0;
-      font-size: 28px;
     }
 
     input, textarea {
@@ -76,11 +67,6 @@
       border: 1px solid rgba(255,255,255,0.1);
       background: transparent;
       color: white;
-      font-size: 16px;
-    }
-
-    input::placeholder, textarea::placeholder {
-      color: #aaa;
     }
 
     button {
@@ -95,11 +81,6 @@
       cursor: pointer;
     }
 
-    button:hover {
-      opacity: 0.9;
-    }
-
-    /* LOGIN */
     #loginBox {
       display: none;
       position: fixed;
@@ -116,11 +97,7 @@
       width: 300px;
     }
 
-    /* ADMIN PANEL */
-    #adminPanel {
-      display: none;
-      padding: 20px;
-    }
+    #adminPanel { display: none; }
 
     .msg {
       background: #1e293b;
@@ -128,7 +105,6 @@
       margin: 6px 0;
       border-radius: 8px;
     }
-
   </style>
 </head>
 
@@ -143,32 +119,25 @@
 
 <div class="container">
 
-  <!-- QUOTE -->
   <div class="card">
     <h2>Get a Quote</h2>
-
     <input id="qname" placeholder="Name">
     <input id="qemail" placeholder="Email">
     <input id="qphone" placeholder="Phone">
-    <input id="qaddress" placeholder="Town Or City">
+    <input id="qaddress" placeholder="Town Or Address">
     <textarea id="qmsg" placeholder="Message"></textarea>
-
     <button onclick="sendQuote()">Send Quote</button>
   </div>
 
-  <!-- CHAT -->
   <div class="card">
     <h2>Live Chat</h2>
-
     <input id="cname" placeholder="Name">
     <textarea id="cmsg" placeholder="Message"></textarea>
-
     <button onclick="sendChat()">Send</button>
   </div>
 
 </div>
 
-<!-- ADMIN PANEL -->
 <div id="adminPanel" class="container">
   <div class="card">
     <h2>Admin Panel</h2>
@@ -177,7 +146,6 @@
   </div>
 </div>
 
-<!-- LOGIN -->
 <div id="loginBox">
   <div id="loginInner">
     <input id="user" placeholder="Username">
@@ -188,7 +156,6 @@
 
 <script>
 
-/* LOGIN */
 function openLogin() {
   loginBox.style.display = "flex";
 }
@@ -201,9 +168,9 @@ function login() {
   }
 }
 
-/* QUOTE */
+/* QUOTE WITH ERROR DISPLAY */
 async function sendQuote() {
-  await fetch("/send-quote", {
+  const res = await fetch("/send-quote", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
@@ -215,12 +182,18 @@ async function sendQuote() {
     })
   });
 
-  alert("Quote sent ✔");
+  const data = await res.json();
+
+  if (data.success) {
+    alert("Quote sent ✔");
+  } else {
+    alert("ERROR: " + data.error);
+  }
 }
 
 /* CHAT */
 async function sendChat() {
-  await fetch("/send-message", {
+  const res = await fetch("/send-message", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
@@ -229,7 +202,11 @@ async function sendChat() {
     })
   });
 
-  alert("Message sent ✔");
+  const data = await res.json();
+
+  if (data.success) {
+    alert("Message sent ✔");
+  }
 }
 
 /* ADMIN */
