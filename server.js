@@ -1,7 +1,7 @@
 const express = require("express");
-const nodemailer = require("nodemailer");
 const cors = require("cors");
 const path = require("path");
+const { Resend } = require("resend");
 
 const app = express();
 
@@ -16,37 +16,18 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ENV CHECK (IMPORTANT)
+// ENV
 const EMAIL = process.env.EMAIL;
-const PASS = process.env.APP_PASSWORD;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
-console.log("EMAIL EXISTS:", !!EMAIL);
-console.log("PASSWORD EXISTS:", !!PASS);
+const resend = new Resend(RESEND_API_KEY);
 
-// FIXED TRANSPORT (IMPORTANT CHANGE: NOT service:'gmail')
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: EMAIL,
-    pass: PASS
-  }
-});
-
-// VERIFY CONNECTION ON START
-transporter.verify((error, success) => {
-  if (error) {
-    console.log("❌ SMTP ERROR:", error);
-  } else {
-    console.log("✅ SMTP READY");
-  }
-});
-
+// TEST ROUTE
 app.get("/test", (req, res) => {
   res.send("Server working");
 });
 
+// QUOTE ROUTE
 app.post("/send-quote", async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -57,29 +38,25 @@ app.post("/send-quote", async (req, res) => {
   }
 
   try {
-    const info = await transporter.sendMail({
-      from: `"SPS Electrical" <${EMAIL}>`,
+    await resend.emails.send({
+      from: "SPS Electrical <onboarding@resend.dev>",
       to: EMAIL,
-      subject: "New Quote Request",
-      text: `
-Name: ${name}
-Email: ${email}
-Message: ${message}
+      subject: "New SPS Electrical Quote Request",
+      html: `
+        <h2>New Quote Request</h2>
+        <p><b>Name:</b> ${name}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>Message:</b> ${message}</p>
       `
     });
 
-    console.log("✅ EMAIL SENT:", info.messageId);
+    console.log("✅ Email sent");
 
     return res.json({ success: true });
 
   } catch (err) {
-    console.error("❌ EMAIL FAILED FULL ERROR:");
-    console.error(err);
-
-    return res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    console.error("❌ Email error:", err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
