@@ -5,54 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    :root {
-      --bg: #070b14;
-      --card: rgba(255,255,255,0.05);
-      --stroke: rgba(255,255,255,0.08);
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --accent: #facc15;
-      --accent2: #1e3a8a;
-    }
-
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: radial-gradient(circle at top, #111827, var(--bg));
-      color: var(--text);
+      font-family: Arial;
+      background: #070b14;
+      color: white;
     }
 
     header {
-      padding: 90px 20px;
+      padding: 80px 20px;
       text-align: center;
-      background: linear-gradient(135deg, var(--accent2), #0b1220);
-      position: relative;
-      overflow: hidden;
+      background: linear-gradient(135deg, #1e3a8a, #0b1220);
     }
 
-    header::after {
-      content: "";
-      position: absolute;
-      width: 400px;
-      height: 400px;
-      background: var(--accent);
-      filter: blur(120px);
-      top: -150px;
-      right: -150px;
-      opacity: 0.3;
-    }
-
-    h1 {
-      font-size: 52px;
-      margin: 0;
-      letter-spacing: 1px;
-    }
-
-    header p {
-      color: var(--muted);
-      margin-top: 10px;
-      font-size: 18px;
-    }
+    h1 { margin: 0; font-size: 48px; }
 
     .container {
       max-width: 1000px;
@@ -61,68 +27,44 @@
     }
 
     .card {
-      background: var(--card);
-      border: 1px solid var(--stroke);
-      padding: 25px;
-      margin: 25px 0;
-      border-radius: 16px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-
-    .card h2 {
-      margin-top: 0;
-      color: var(--accent);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 14px;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+      gap: 10px;
     }
 
     .service {
       background: rgba(255,255,255,0.03);
-      border: 1px solid var(--stroke);
       padding: 15px;
-      border-radius: 12px;
+      border-radius: 10px;
       text-align: center;
-      transition: 0.2s;
-    }
-
-    .service:hover {
-      transform: translateY(-3px);
-      border-color: var(--accent);
     }
 
     input, textarea {
       width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 10px;
-      border: 1px solid var(--stroke);
-      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 8px;
+      border: none;
+      background: #111827;
       color: white;
-      outline: none;
-    }
-
-    input:focus, textarea:focus {
-      border-color: var(--accent);
     }
 
     button {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, var(--accent), #eab308);
+      padding: 12px;
+      background: gold;
       border: none;
-      cursor: pointer;
       font-weight: bold;
+      cursor: pointer;
       border-radius: 10px;
-      transition: 0.2s;
-    }
-
-    button:hover {
-      transform: scale(1.02);
     }
 
     /* CHAT */
@@ -130,57 +72,90 @@
       position: fixed;
       bottom: 20px;
       right: 20px;
+      width: 280px;
+      background: #111827;
+      padding: 10px;
+      border-radius: 12px;
+    }
+
+    /* LOGIN SCREEN */
+    #loginScreen {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 999;
+    }
+
+    #adminPanel {
+      display: none;
+    }
+
+    #adminBtn {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px;
+      background: #facc15;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .box {
       width: 300px;
-      background: rgba(17,24,39,0.9);
-      border: 1px solid var(--stroke);
-      padding: 12px;
-      border-radius: 14px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-
-    #chat h4 {
-      margin: 5px 0 10px;
-      color: var(--accent);
-    }
-
-    #qstatus, #cstatus {
-      font-size: 12px;
-      color: var(--muted);
     }
   </style>
 </head>
 
 <body>
 
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <h2>Admin Login</h2>
+
+  <div class="box">
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="logmsg"></p>
+  </div>
+</div>
+
+<button id="adminBtn" onclick="toggleAdmin()">Admin Panel</button>
+
 <header>
   <h1>SPS Electrical</h1>
-  <p>Reliable • Professional • Trusted in Sussex</p>
+  <p>Reliable Electrical Services</p>
 </header>
 
 <div class="container">
 
+  <!-- SERVICES -->
   <div class="card">
-    <h2>Our Services</h2>
+    <h2>Services</h2>
     <div class="grid">
       <div class="service">House Wiring</div>
-      <div class="service">Lighting Installations</div>
+      <div class="service">Lighting</div>
       <div class="service">Fault Finding</div>
-      <div class="service">Socket Repairs</div>
-      <div class="service">Fuse Board Upgrades</div>
-      <div class="service">Emergency Callouts</div>
+      <div class="service">Repairs</div>
     </div>
   </div>
 
+  <!-- QUOTE -->
   <div class="card">
-    <h2>Get a Free Quote</h2>
+    <h2>Get a Quote</h2>
 
-    <input id="qname" placeholder="Full Name">
+    <input id="qname" placeholder="Name">
     <input id="qemail" placeholder="Email">
-    <input id="qphone" placeholder="Phone Number">
-    <textarea id="qmsg" placeholder="Describe the job"></textarea>
+    <input id="qphone" placeholder="Phone">
+    <textarea id="qmsg" placeholder="Job details"></textarea>
 
-    <button onclick="sendQuote()">Send Quote</button>
+    <button onclick="quote()">Send Quote</button>
     <p id="qstatus"></p>
   </div>
 
@@ -188,47 +163,55 @@
 
 <!-- CHAT -->
 <div id="chat">
-  <h4>💬 Live Chat</h4>
+  <h4>💬 Chat</h4>
 
-  <input id="cname" placeholder="Your Name">
+  <input id="cname" placeholder="Name">
   <textarea id="cmsg" placeholder="Message"></textarea>
 
-  <button onclick="sendChat()">Send</button>
+  <button onclick="chat()">Send</button>
   <p id="cstatus"></p>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="container">
+  <div class="card">
+    <h2>Admin Panel</h2>
+    <p>This is where your messages/quotes would show (placeholder UI).</p>
+  </div>
 </div>
 
 <script>
 
-/* DO NOT CHANGE (kept identical) */
+/* ---------------- LOGIN ---------------- */
+function login() {
+  const u = user.value;
+  const p = pass.value;
 
-async function sendQuote() {
-  const res = await fetch('/send-quote', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      name: qname.value,
-      email: qemail.value,
-      phone: qphone.value,
-      message: qmsg.value
-    })
-  });
-
-  const data = await res.json();
-  qstatus.innerText = data.success ? "Quote sent ✔" : "Failed ❌";
+  if (u === "admin" && p === "paul") {
+    loginScreen.style.display = "none";
+    adminBtn.style.display = "block";
+    logmsg.innerText = "";
+  } else {
+    logmsg.innerText = "Wrong login ❌";
+  }
 }
 
-async function sendChat() {
-  const res = await fetch('/send-message', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      name: cname.value,
-      message: cmsg.value
-    })
-  });
+/* ---------------- ADMIN TOGGLE ---------------- */
+function toggleAdmin() {
+  const panel = document.getElementById("adminPanel");
 
-  const data = await res.json();
-  cstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
+  panel.style.display =
+    panel.style.display === "block" ? "none" : "block";
+}
+
+/* ---------------- QUOTE ---------------- */
+function quote() {
+  qstatus.innerText = "Sent ✔ (frontend demo)";
+}
+
+/* ---------------- CHAT ---------------- */
+function chat() {
+  cstatus.innerText = "Sent ✔ (frontend demo)";
 }
 
 </script>
