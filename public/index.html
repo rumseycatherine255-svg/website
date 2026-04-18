@@ -8,28 +8,27 @@
     body {
       margin: 0;
       font-family: Arial;
-      background: #0b1220;
+      background: radial-gradient(circle at top, #1e3a8a, #020617);
       color: white;
     }
 
     /* HEADER */
     header {
-      padding: 40px 20px;
-      background: linear-gradient(135deg, #0f172a, #1e3a8a);
       display: flex;
       align-items: center;
       gap: 20px;
+      padding: 50px 20px;
       justify-content: center;
     }
 
-    .logo {
-      height: 80px;
+    header img {
+      height: 90px;
     }
 
     .title {
-      font-size: 40px;
+      font-size: 50px;
       font-weight: bold;
-      color: #22c7c7;
+      color: #22d3ee;
     }
 
     .subtitle {
@@ -37,24 +36,37 @@
       font-size: 18px;
     }
 
+    /* ADMIN BUTTON */
+    #adminBtn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(135deg, gold, orange);
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* CONTAINER */
     .container {
       max-width: 900px;
       margin: auto;
       padding: 20px;
     }
 
+    /* CARDS */
     .card {
-      background: rgba(17, 24, 39, 0.8);
-      backdrop-filter: blur(10px);
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(12px);
       padding: 25px;
       margin: 25px 0;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
     }
 
-    h2 {
-      margin-top: 0;
-    }
+    h2 { margin-top: 0; }
 
     input, textarea {
       width: 100%;
@@ -62,7 +74,7 @@
       margin: 8px 0;
       border-radius: 10px;
       border: none;
-      background: #0f172a;
+      background: #020617;
       color: white;
       font-size: 15px;
     }
@@ -83,8 +95,7 @@
       opacity: 0.9;
     }
 
-    #adminPanel { display: none; }
-
+    /* LOGIN */
     #loginBox {
       display: none;
       position: fixed;
@@ -101,17 +112,8 @@
       border-radius: 12px;
     }
 
-    #adminBtn {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: gold;
-      border: none;
-      padding: 10px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    /* ADMIN PANEL */
+    #adminPanel { display: none; }
 
     .msg {
       padding: 10px;
@@ -119,15 +121,16 @@
       border-radius: 8px;
       background: #1e293b;
     }
+
   </style>
 </head>
 
 <body>
 
-<button id="adminBtn" onclick="openLogin()">Admin</button>
+<button id="adminBtn" onclick="openLogin()">Admin Login</button>
 
 <header>
-  <img src="logo.png" class="logo">
+  <img src="logo.png">
   <div>
     <div class="title">Sps</div>
     <div class="subtitle">Electrical • Est 1989</div>
@@ -156,7 +159,7 @@
     <input id="cname" placeholder="Name">
     <textarea id="cmsg" placeholder="Message"></textarea>
 
-    <button onclick="sendChat()">Send</button>
+    <button onclick="sendChat()">Send Message</button>
   </div>
 
 </div>
@@ -209,6 +212,8 @@ async function sendQuote() {
       message: qmsg.value
     })
   });
+
+  alert("Quote sent ✔");
 }
 
 /* CHAT */
@@ -221,6 +226,8 @@ async function sendChat() {
       message: cmsg.value
     })
   });
+
+  alert("Message sent ✔");
 }
 
 /* ADMIN */
