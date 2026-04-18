@@ -8,79 +8,124 @@
     body {
       margin: 0;
       font-family: Arial;
+      background: radial-gradient(circle at top, #1e3a8a, #020617);
       color: white;
-      background: radial-gradient(circle at top left, #1e3a8a, #020617);
     }
 
-    #adminBtn {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #facc15, #f59e0b);
-      border: none;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      color: black;
-    }
-
+    /* HEADER */
     header {
-      padding: 80px 60px 40px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 70px 20px 30px;
+      justify-content: center;
+      text-align: center;
+      flex-wrap: wrap;
+    }
+
+    header img {
+      height: 90px;
     }
 
     .title {
-      font-size: 64px;
+      font-size: 50px;
       font-weight: bold;
-    }
-
-    .title span {
       color: #22d3ee;
     }
 
     .subtitle {
-      margin-top: 10px;
-      font-size: 20px;
       color: #ccc;
+      font-size: 18px;
     }
 
+    /* 🔥 ULTRA SMALL ADMIN BUTTON */
+    #adminBtn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 8px;
+      background: linear-gradient(135deg, gold, orange);
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 1000;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* CONTAINER */
     .container {
       max-width: 900px;
       margin: auto;
-      padding: 20px;
+      padding: 15px;
     }
 
+    /* CARDS */
     .card {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(15px);
-      border-radius: 16px;
-      padding: 30px;
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(12px);
+      padding: 25px;
       margin: 25px 0;
-      box-shadow: 0 0 40px rgba(0,0,0,0.4);
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
     }
+
+    h2 { margin-top: 0; }
 
     input, textarea {
       width: 100%;
-      padding: 14px;
-      margin: 10px 0;
+      padding: 12px;
+      margin: 8px 0;
       border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: transparent;
+      border: none;
+      background: #020617;
       color: white;
+      font-size: 15px;
+      box-sizing: border-box;
     }
 
     button {
-      display: block;
-      margin: 20px auto 0;
-      padding: 12px 30px;
-      border-radius: 10px;
+      width: 100%;
+      padding: 12px;
       border: none;
-      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
       color: white;
       font-weight: bold;
       cursor: pointer;
+      margin-top: 10px;
     }
 
+    button:hover {
+      opacity: 0.9;
+    }
+
+    /* EXAMPLES */
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .example-box {
+      height: 140px;
+      background: rgba(255,255,255,0.05);
+      border: 1px dashed rgba(255,255,255,0.3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    /* LOGIN */
     #loginBox {
       display: none;
       position: fixed;
@@ -91,30 +136,80 @@
     }
 
     #loginInner {
-      background: #111827;
-      padding: 25px;
-      border-radius: 12px;
       width: 300px;
+      background: #111827;
+      padding: 20px;
+      border-radius: 12px;
     }
 
     #adminPanel { display: none; }
 
     .msg {
-      background: #1e293b;
       padding: 10px;
-      margin: 6px 0;
+      margin: 5px 0;
       border-radius: 8px;
+      background: #1e293b;
+      word-break: break-word;
+    }
+
+    /* 📱 MOBILE */
+    @media (max-width: 600px) {
+
+      header {
+        padding: 85px 10px 20px;
+      }
+
+      .title {
+        font-size: 34px;
+      }
+
+      .subtitle {
+        font-size: 14px;
+      }
+
+      header img {
+        height: 70px;
+      }
+
+      /* EVEN SMALLER ADMIN BUTTON */
+      #adminBtn {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+        top: 8px;
+        right: 8px;
+      }
+
+      .examples-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .example-box {
+        height: 160px;
+      }
+
+      .container {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 15px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<button id="adminBtn" onclick="openLogin()">Admin Login</button>
+<!-- 🔐 ICON BUTTON -->
+<button id="adminBtn" onclick="openLogin()">🔐</button>
 
 <header>
-  <div class="title"><span>Sps</span> Electrical</div>
-  <div class="subtitle">Electrical • Est 1989</div>
+  <img src="logo.png">
+  <div>
+    <div class="title">Sps</div>
+    <div class="subtitle">Electrical • Est 1989</div>
+  </div>
 </header>
 
 <div class="container">
@@ -124,7 +219,7 @@
     <input id="qname" placeholder="Name">
     <input id="qemail" placeholder="Email">
     <input id="qphone" placeholder="Phone">
-    <input id="qaddress" placeholder="Town Or Address">
+    <input id="qaddress" placeholder="Full Address">
     <textarea id="qmsg" placeholder="Message"></textarea>
     <button onclick="sendQuote()">Send Quote</button>
   </div>
@@ -133,11 +228,24 @@
     <h2>Live Chat</h2>
     <input id="cname" placeholder="Name">
     <textarea id="cmsg" placeholder="Message"></textarea>
-    <button onclick="sendChat()">Send</button>
+    <button onclick="sendChat()">Send Message</button>
+  </div>
+
+  <div class="card">
+    <h2>Examples</h2>
+
+    <div class="examples-grid">
+      <div class="example-box">Image 1</div>
+      <div class="example-box">Image 2</div>
+      <div class="example-box">Image 3</div>
+      <div class="example-box">Image 4</div>
+    </div>
+
   </div>
 
 </div>
 
+<!-- ADMIN -->
 <div id="adminPanel" class="container">
   <div class="card">
     <h2>Admin Panel</h2>
@@ -146,6 +254,7 @@
   </div>
 </div>
 
+<!-- LOGIN -->
 <div id="loginBox">
   <div id="loginInner">
     <input id="user" placeholder="Username">
@@ -157,56 +266,51 @@
 <script>
 
 function openLogin() {
-  loginBox.style.display = "flex";
+  document.getElementById("loginBox").style.display = "flex";
 }
 
 function login() {
-  if (user.value === "paul" && pass.value === "admin") {
-    loginBox.style.display = "none";
-    adminPanel.style.display = "block";
+  const user = document.getElementById("user").value;
+  const pass = document.getElementById("pass").value;
+
+  if (user === "paul" && pass === "admin") {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
     loadData();
+  } else {
+    alert("Wrong login");
   }
 }
 
-/* QUOTE WITH ERROR DISPLAY */
+/* QUOTE */
 async function sendQuote() {
-  const res = await fetch("/send-quote", {
+  await fetch("/send-quote", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
-      name: qname.value,
-      email: qemail.value,
-      phone: qphone.value,
-      address: qaddress.value,
-      message: qmsg.value
+      name: document.getElementById("qname").value,
+      email: document.getElementById("qemail").value,
+      phone: document.getElementById("qphone").value,
+      address: document.getElementById("qaddress").value,
+      message: document.getElementById("qmsg").value
     })
   });
 
-  const data = await res.json();
-
-  if (data.success) {
-    alert("Quote sent ✔");
-  } else {
-    alert("ERROR: " + data.error);
-  }
+  alert("Quote sent ✔");
 }
 
 /* CHAT */
 async function sendChat() {
-  const res = await fetch("/send-message", {
+  await fetch("/send-message", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
-      name: cname.value,
-      message: cmsg.value
+      name: document.getElementById("cname").value,
+      message: document.getElementById("cmsg").value
     })
   });
 
-  const data = await res.json();
-
-  if (data.success) {
-    alert("Message sent ✔");
-  }
+  alert("Message sent ✔");
 }
 
 /* ADMIN */
@@ -237,7 +341,7 @@ async function loadData() {
     `;
   });
 
-  output.innerHTML = html;
+  document.getElementById("output").innerHTML = html;
 }
 
 </script>
