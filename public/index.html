@@ -18,7 +18,7 @@
       background: linear-gradient(135deg, #1e3a8a, #0b1220);
     }
 
-    h1 { font-size: 42px; margin: 0; }
+    h1 { margin: 0; font-size: 42px; }
 
     .container {
       max-width: 900px;
@@ -90,6 +90,20 @@
       font-weight: bold;
       border-radius: 8px;
     }
+
+    .msgBox {
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 8px;
+    }
+
+    .userMsg {
+      background: #1e293b;
+    }
+
+    .adminMsg {
+      background: #1e3a8a;
+    }
   </style>
 </head>
 
@@ -103,12 +117,6 @@
 </header>
 
 <div class="container">
-
-  <!-- SERVICES -->
-  <div class="card">
-    <h2>Services</h2>
-    <p>House Wiring, Fault Finding, Lighting, Repairs</p>
-  </div>
 
   <!-- QUOTE -->
   <div class="card">
@@ -141,6 +149,11 @@
   <div class="card">
     <h2>Admin Panel</h2>
     <p>Welcome Paul 👋</p>
+
+    <button onclick="loadData()">Refresh Chats</button>
+
+    <div id="chatView"></div>
+    <div id="quoteView"></div>
   </div>
 </div>
 
@@ -159,26 +172,6 @@
 
 <script>
 
-/* ---------------- POPUP NOTIFICATION ---------------- */
-function showPopup(msg, color) {
-  const popup = document.createElement("div");
-
-  popup.innerText = msg;
-
-  popup.style.position = "fixed";
-  popup.style.bottom = "20px";
-  popup.style.right = "20px";
-  popup.style.background = color;
-  popup.style.color = "white";
-  popup.style.padding = "12px 18px";
-  popup.style.borderRadius = "10px";
-  popup.style.zIndex = "9999";
-
-  document.body.appendChild(popup);
-
-  setTimeout(() => popup.remove(), 3000);
-}
-
 /* ---------------- LOGIN ---------------- */
 function openLogin() {
   loginBox.style.display = "flex";
@@ -192,6 +185,23 @@ function login() {
   } else {
     msg.innerText = "Wrong login ❌";
   }
+}
+
+/* ---------------- POPUP ---------------- */
+function popup(text, color) {
+  const div = document.createElement("div");
+  div.innerText = text;
+
+  div.style.position = "fixed";
+  div.style.bottom = "20px";
+  div.style.right = "20px";
+  div.style.background = color;
+  div.style.padding = "10px";
+  div.style.borderRadius = "8px";
+
+  document.body.appendChild(div);
+
+  setTimeout(() => div.remove(), 3000);
 }
 
 /* ---------------- QUOTE ---------------- */
@@ -210,14 +220,14 @@ async function sendQuote() {
   const data = await res.json();
 
   if (data.success) {
-    showPopup("Quote sent successfully ✔", "green");
+    popup("Quote sent ✔", "green");
 
     qname.value = "";
     qemail.value = "";
     qphone.value = "";
     qmsg.value = "";
   } else {
-    showPopup("Failed to send quote ❌", "red");
+    popup("Failed ❌", "red");
   }
 }
 
@@ -234,11 +244,46 @@ async function sendChat() {
 
   const data = await res.json();
 
-  if (data.success) {
-    cstatus.innerText = "Sent ✔";
-  } else {
-    cstatus.innerText = "Failed ❌";
+  cstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
+}
+
+/* ---------------- LOAD ADMIN DATA ---------------- */
+async function loadData() {
+  const res = await fetch('/data');
+  const data = await res.json();
+
+  /* CHAT DISPLAY */
+  let chatHTML = "<h3>Chats</h3>";
+
+  for (let user in data.chats) {
+    chatHTML += `<h4>${user}</h4>`;
+
+    data.chats[user].forEach(m => {
+      chatHTML += `
+        <div class="${m.sender === 'admin' ? 'adminMsg' : 'userMsg'} msgBox">
+          <b>${m.sender}:</b> ${m.message}
+        </div>
+      `;
+    });
   }
+
+  chatView.innerHTML = chatHTML;
+
+  /* QUOTE DISPLAY */
+  let quoteHTML = "<h3>Quotes</h3>";
+
+  data.quotes.forEach(q => {
+    quoteHTML += `
+      <div class="msgBox userMsg">
+        <b>${q.name}</b><br>
+        ${q.email}<br>
+        ${q.phone}<br>
+        ${q.message}
+      </div>
+    `;
+  });
+
+  quoteView.innerHTML = quoteHTML;
 }
 
 </script>
