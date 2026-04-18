@@ -16,32 +16,37 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ENV
+// ENV VARIABLES
 const EMAIL = process.env.EMAIL;
-const PASS = process.env.APP_PASSWORD;
+const BREVO_USER = process.env.BREVO_USER;
+const BREVO_PASS = process.env.BREVO_PASS;
 
-// Gmail SMTP (WORKING VERSION)
+// SMTP TRANSPORT (BREVO)
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
   auth: {
-    user: EMAIL,
-    pass: PASS
+    user: BREVO_USER,
+    pass: BREVO_PASS
   }
 });
 
-// IMPORTANT: verify connection (helps debug Railway issues)
+// VERIFY SMTP ON START
 transporter.verify((error) => {
   if (error) {
-    console.log("❌ SMTP FAILED:", error);
+    console.log("❌ SMTP ERROR:", error);
   } else {
     console.log("✅ SMTP READY");
   }
 });
 
+// TEST ROUTE
 app.get("/test", (req, res) => {
   res.send("Server working");
 });
 
+// SEND QUOTE
 app.post("/send-quote", async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -55,7 +60,7 @@ app.post("/send-quote", async (req, res) => {
     await transporter.sendMail({
       from: `"SPS Electrical" <${EMAIL}>`,
       to: EMAIL,
-      subject: "New Quote Request",
+      subject: "New SPS Electrical Quote Request",
       text: `
 Name: ${name}
 Email: ${email}
@@ -69,11 +74,7 @@ Message: ${message}
 
   } catch (err) {
     console.error("❌ EMAIL ERROR:", err);
-
-    return res.status(500).json({
-      success: false,
-      error: err.message
-    });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
