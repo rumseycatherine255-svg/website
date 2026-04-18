@@ -13,7 +13,7 @@
     }
 
     header {
-      padding: 80px 20px;
+      padding: 70px 20px;
       text-align: center;
       background: linear-gradient(135deg, #1e3a8a, #0b1220);
     }
@@ -21,30 +21,17 @@
     h1 { margin: 0; font-size: 48px; }
 
     .container {
-      max-width: 1000px;
+      max-width: 900px;
       margin: auto;
       padding: 20px;
     }
 
     .card {
       background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
       padding: 20px;
       margin: 20px 0;
-      border-radius: 14px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
-      gap: 10px;
-    }
-
-    .service {
-      background: rgba(255,255,255,0.03);
-      padding: 15px;
-      border-radius: 10px;
-      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
     input, textarea {
@@ -67,66 +54,42 @@
       border-radius: 10px;
     }
 
-    /* CHAT */
-    #chat {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 280px;
-      background: #111827;
-      padding: 10px;
-      border-radius: 12px;
-    }
-
-    /* LOGIN SCREEN */
-    #loginScreen {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 999;
-    }
-
     #adminPanel {
       display: none;
     }
 
-    #adminBtn {
+    #loginBox {
       display: none;
       position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 10px;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #loginInner {
+      width: 300px;
+      background: #111827;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    #adminBtn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
       background: #facc15;
+      padding: 10px;
       border: none;
       cursor: pointer;
       font-weight: bold;
-    }
-
-    .box {
-      width: 300px;
     }
   </style>
 </head>
 
 <body>
 
-<!-- LOGIN SCREEN -->
-<div id="loginScreen">
-  <h2>Admin Login</h2>
-
-  <div class="box">
-    <input id="user" placeholder="Username">
-    <input id="pass" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <p id="logmsg"></p>
-  </div>
-</div>
-
-<button id="adminBtn" onclick="toggleAdmin()">Admin Panel</button>
+<button id="adminBtn" onclick="openLogin()">Admin Login</button>
 
 <header>
   <h1>SPS Electrical</h1>
@@ -135,83 +98,57 @@
 
 <div class="container">
 
-  <!-- SERVICES -->
   <div class="card">
     <h2>Services</h2>
-    <div class="grid">
-      <div class="service">House Wiring</div>
-      <div class="service">Lighting</div>
-      <div class="service">Fault Finding</div>
-      <div class="service">Repairs</div>
-    </div>
+    <p>House Wiring, Lighting, Fault Finding, Repairs</p>
   </div>
 
-  <!-- QUOTE -->
   <div class="card">
-    <h2>Get a Quote</h2>
-
-    <input id="qname" placeholder="Name">
-    <input id="qemail" placeholder="Email">
-    <input id="qphone" placeholder="Phone">
-    <textarea id="qmsg" placeholder="Job details"></textarea>
-
-    <button onclick="quote()">Send Quote</button>
-    <p id="qstatus"></p>
+    <h2>Contact</h2>
+    <input placeholder="Name">
+    <input placeholder="Email">
+    <textarea placeholder="Message"></textarea>
+    <button>Send</button>
   </div>
 
-</div>
-
-<!-- CHAT -->
-<div id="chat">
-  <h4>💬 Chat</h4>
-
-  <input id="cname" placeholder="Name">
-  <textarea id="cmsg" placeholder="Message"></textarea>
-
-  <button onclick="chat()">Send</button>
-  <p id="cstatus"></p>
 </div>
 
 <!-- ADMIN PANEL -->
 <div id="adminPanel" class="container">
   <div class="card">
     <h2>Admin Panel</h2>
-    <p>This is where your messages/quotes would show (placeholder UI).</p>
+    <p>Welcome Paul 👋</p>
+    <p>This is your admin area.</p>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginBox">
+  <div id="loginInner">
+    <h3>Admin Login</h3>
+
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+    <p id="msg"></p>
   </div>
 </div>
 
 <script>
 
-/* ---------------- LOGIN ---------------- */
+function openLogin() {
+  loginBox.style.display = "flex";
+}
+
 function login() {
-  const u = user.value;
-  const p = pass.value;
-
-  if (u === "admin" && p === "paul") {
-    loginScreen.style.display = "none";
-    adminBtn.style.display = "block";
-    logmsg.innerText = "";
+  if (user.value === "paul" && pass.value === "admin") {
+    loginBox.style.display = "none";
+    adminPanel.style.display = "block";
+    msg.innerText = "";
   } else {
-    logmsg.innerText = "Wrong login ❌";
+    msg.innerText = "Wrong login ❌";
   }
-}
-
-/* ---------------- ADMIN TOGGLE ---------------- */
-function toggleAdmin() {
-  const panel = document.getElementById("adminPanel");
-
-  panel.style.display =
-    panel.style.display === "block" ? "none" : "block";
-}
-
-/* ---------------- QUOTE ---------------- */
-function quote() {
-  qstatus.innerText = "Sent ✔ (frontend demo)";
-}
-
-/* ---------------- CHAT ---------------- */
-function chat() {
-  cstatus.innerText = "Sent ✔ (frontend demo)";
 }
 
 </script>
