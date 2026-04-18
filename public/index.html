@@ -1,146 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SPS Electrical</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <title>SPS Electrical Chat</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #0a0f1c;
-      color: white;
-    }
+    body { font-family: Arial; background:#0a0f1c; color:white; }
 
-    header {
-      padding: 60px;
-      text-align: center;
-      background: linear-gradient(135deg, #facc15, #1e3a8a);
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .card {
-      background: #111827;
-      padding: 20px;
-      margin: 20px 0;
-      border-radius: 12px;
+    .box {
+      width:300px;
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:#111827;
+      padding:10px;
+      border-radius:10px;
     }
 
     input, textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: none;
+      width:100%;
+      margin:5px 0;
+      padding:8px;
     }
 
     button {
-      width: 100%;
-      padding: 12px;
-      background: #facc15;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background: #eab308;
-    }
-
-    /* CHAT BOX */
-    #chatBox {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 280px;
-      background: #111827;
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px black;
-    }
-
-    #chatBox textarea {
-      height: 60px;
+      width:100%;
+      padding:8px;
+      background:gold;
+      border:none;
+      cursor:pointer;
     }
   </style>
 </head>
 
 <body>
 
-<header>
-  <h1>SPS Electrical</h1>
-  <p>Reliable Electrical Services</p>
-</header>
+<h2 style="text-align:center;">SPS Electrical</h2>
 
-<div class="container">
+<div class="box">
+  <h4>💬 Chat</h4>
 
-  <!-- QUOTE -->
-  <div class="card">
-    <h2>Get a Quote</h2>
+  <input id="name" placeholder="Your name">
+  <textarea id="msg" placeholder="Message"></textarea>
 
-    <input id="qname" placeholder="Name">
-    <input id="qemail" placeholder="Email">
-    <input id="qphone" placeholder="Phone">
-    <textarea id="qmsg" placeholder="What do you need?"></textarea>
+  <button onclick="send()">Send</button>
 
-    <button onclick="sendQuote()">Send Quote</button>
-
-    <p id="qstatus"></p>
-  </div>
-
-</div>
-
-<!-- CHAT BOX -->
-<div id="chatBox">
-  <h4>💬 Live Chat</h4>
-
-  <input id="cname" placeholder="Your Name">
-  <textarea id="cmsg" placeholder="Message"></textarea>
-
-  <button onclick="sendChat()">Send</button>
-
-  <p id="cstatus"></p>
+  <p id="status"></p>
 </div>
 
 <script>
-
-// QUOTE
-async function sendQuote() {
-  const res = await fetch('/send-quote', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
+async function send() {
+  const res = await fetch('/send-message', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
-      name: qname.value,
-      email: qemail.value,
-      phone: qphone.value,
-      message: qmsg.value
+      name: name.value,
+      message: msg.value
     })
   });
 
   const data = await res.json();
-  qstatus.innerText = data.success ? "Quote sent ✔" : "Failed ❌";
+
+  status.innerText = data.success ? "Sent ✔" : "Failed ❌";
 }
-
-// CHAT
-async function sendChat() {
-  const res = await fetch('/send-chat', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      name: cname.value,
-      message: cmsg.value
-    })
-  });
-
-  const data = await res.json();
-  cstatus.innerText = data.success ? "Sent ✔" : "Failed ❌";
-}
-
 </script>
 
 </body>
