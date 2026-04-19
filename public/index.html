@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SPS Electrical</title>
+  <title>SPS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
       margin: 0;
-      font-family: Arial;
+      font-family: Comic Sans MS;
       background: radial-gradient(circle at top, #1e3a8a, #020617);
       color: white;
     }
@@ -49,9 +49,24 @@
       padding: 70px 20px 30px;
     }
 
+    /* LOGO + TITLE WRAPPER */
+    .headerWrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .headerWrap img {
+      height: 70px;
+      width: auto;
+    }
+
     .title {
       font-size: 48px;
       color: #22d3ee;
+      margin: 0;
     }
 
     .subtitle {
@@ -139,8 +154,18 @@
 </div>
 
 <header>
-  <div class="title">Sps Electrical</div>
-  <div class="subtitle">Electrical • Est 1989</div>
+
+  <div class="headerWrap">
+    <!-- LOGO ADDED HERE -->
+    <img src="image.png" alt="logo">
+
+    <div>
+      <div class="title">Sps</div>
+      <div class="subtitle">Electrical | Est 1989</div>
+      <div class="subtitle">---------------------------------------------------------------------------</div>
+    </div>
+  </div>
+
 </header>
 
 <div class="container">
@@ -151,7 +176,7 @@
     <input id="qname" placeholder="Name">
     <input id="qemail" placeholder="Email">
     <input id="qphone" placeholder="Phone">
-    <input id="qaddress" placeholder="Full Address">
+    <input id="qaddress" placeholder="Address">
     <textarea id="qmsg" placeholder="Message"></textarea>
     <button onclick="sendQuote()">Send Quote</button>
   </div>
@@ -206,14 +231,12 @@
 
 <script>
 
-let aiEnabled = true;
-let aiChat = [];
-
 /* AI TOGGLE */
+let aiEnabled = true;
+
 function toggleAI() {
   aiEnabled = !aiEnabled;
   aiBtn.style.opacity = aiEnabled ? "1" : "0.4";
-  alert(aiEnabled ? "AI Enabled 🤖" : "AI Disabled ❌");
 }
 
 /* AI PAGE */
@@ -225,7 +248,9 @@ function closeAIPage() {
   aiPage.style.display = "none";
 }
 
-/* AI CHAT PAGE */
+/* AI CHAT */
+let aiChat = [];
+
 function sendAIMessage() {
   const text = aiInput.value;
   if (!text) return;
@@ -236,15 +261,9 @@ function sendAIMessage() {
 
   const msg = text.toLowerCase();
 
-  if (msg.includes("price")) {
-    reply = "Prices vary. Please use the quote form above.";
-  } else if (msg.includes("socket")) {
-    reply = "We install sockets 👍 Send a quote request.";
-  } else if (msg.includes("rewire")) {
-    reply = "Rewires require inspection. Request a quote.";
-  } else if (msg.includes("hi")) {
-    reply = "Hi 👋 How can I help?";
-  }
+  if (msg.includes("socket")) reply = "We install sockets 👍";
+  else if (msg.includes("rewire")) reply = "Rewires require inspection.";
+  else if (msg.includes("hi")) reply = "Hi 👋";
 
   aiChat.push({ sender: "AI", text: reply });
 
@@ -264,7 +283,6 @@ function renderAIChat() {
   });
 
   aiChatBox.innerHTML = html;
-  aiChatBox.scrollTop = aiChatBox.scrollHeight;
 }
 
 /* LOGIN */
@@ -276,13 +294,12 @@ function login() {
   if (user.value === "paul" && pass.value === "admin") {
     loginBox.style.display = "none";
     adminPanel.style.display = "block";
-    loadData();
   }
 }
 
 /* QUOTE */
 async function sendQuote() {
-  const res = await fetch("/send-quote", {
+  await fetch("/send-quote", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
@@ -294,8 +311,7 @@ async function sendQuote() {
     })
   });
 
-  const data = await res.json();
-  alert(data.success ? "Quote sent ✔" : "Error");
+  alert("Quote sent ✔");
 }
 
 /* CHAT */
@@ -307,57 +323,11 @@ async function sendChat() {
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       name,
-      message: cmsg.value,
-      ai: aiEnabled
+      message: cmsg.value
     })
   });
 
-  loadChat(name);
   cmsg.value = "";
-}
-
-async function loadChat(name) {
-  const res = await fetch("/data");
-  const data = await res.json();
-
-  let html = "";
-
-  (data.chats[name] || []).forEach(m => {
-    html += `<div class="msg ${m.sender === "AI" ? "ai" : "user"}">
-      <b>${m.sender}:</b> ${m.message}
-    </div>`;
-  });
-
-  chatBox.innerHTML = html;
-}
-
-/* ADMIN */
-async function loadData() {
-  const res = await fetch("/data");
-  const data = await res.json();
-
-  let html = "<h3>Chats</h3>";
-
-  for (let u in data.chats) {
-    html += `<h4>${u}</h4>`;
-    data.chats[u].forEach(m => {
-      html += `<div class="msg"><b>${m.sender}:</b> ${m.message}</div>`;
-    });
-  }
-
-  html += "<h3>Quotes</h3>";
-
-  data.quotes.forEach(q => {
-    html += `<div class="msg">
-      <b>${q.name}</b><br>
-      ${q.email}<br>
-      ${q.phone}<br>
-      ${q.address}<br>
-      ${q.message}
-    </div>`;
-  });
-
-  output.innerHTML = html;
 }
 
 </script>
