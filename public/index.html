@@ -1,336 +1,435 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SPS</title>
+  <title>SPS Electrical | Est. 1989 | Professional Electricians</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      margin: 0;
-      font-family: Comic Sans MS;
-      background: #111827;
-      color: white;
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --grey: #5a5a5a;
+      --grey-bg: #6b6b6b;
+      --grey-dark: #3a3a3a;
+      --grey-light: #f4f4f4;
+      --grey-mid: #ddd;
+      --teal: #22d3ee;
+      --teal-dark: #0891b2;
+      --white: #fff;
+      --text: #222;
+      --muted: #666;
+      --sans: 'Open Sans', Arial, sans-serif;
     }
+    body { font-family: var(--sans); background: var(--white); color: var(--text); }
 
-    /* TOP BUTTONS */
-    #topBtns {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      gap: 5px;
-      z-index: 1000;
-    }
+    /* TOP BAR */
+    .top-bar { background: var(--grey-dark); color: #ccc; font-size: 0.82rem; padding: 0.45rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .top-bar a { color: #ccc; text-decoration: none; }
+    .top-bar a:hover { color: var(--teal); }
+    .top-bar-left { display: flex; gap: 1.5rem; }
 
-    #adminBtn, #aiBtn, #aiPageBtn {
-      width: 30px;
-      height: 30px;
-      border-radius: 7px;
-      border: none;
-      cursor: pointer;
-    }
+    /* HEADER */
+    header { background: var(--grey-bg); padding: 0.9rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .logo-wrap { display: flex; align-items: center; gap: 14px; }
+    .logo-wrap img { height: 64px; width: auto; }
+    .logo-text .name { font-size: 1.6rem; font-weight: 700; color: white; line-height: 1.1; }
+    .logo-text .tagline { font-size: 0.8rem; color: #ddd; }
+    .header-phone { text-align: right; }
+    .header-phone .label { font-size: 0.78rem; color: #ddd; }
+    .header-phone .number { font-size: 1.5rem; font-weight: 700; color: var(--teal); }
 
-    #adminBtn {
-      background: linear-gradient(135deg, gold, orange);
-    }
+    /* NAV */
+    nav { background: var(--grey-dark); display: flex; flex-wrap: wrap; }
+    nav a { color: #ddd; text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 0.85rem 1.2rem; display: block; transition: background .15s; border-right: 1px solid rgba(255,255,255,0.07); text-transform: uppercase; letter-spacing: 0.04em; }
+    nav a:hover, nav a.active { background: var(--teal-dark); color: white; }
+    .nav-cta { margin-left: auto; background: var(--teal) !important; color: #111 !important; font-weight: 700 !important; }
+    .nav-cta:hover { background: #06b6d4 !important; }
 
-    #aiBtn {
-      background: linear-gradient(135deg, #22d3ee, #0284c7);
-      color: white;
-    }
+    /* FIXED BUTTONS */
+    #topBtns { position: fixed; bottom: 16px; right: 16px; display: flex; gap: 6px; z-index: 1000; }
+    #topBtns button { width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: transform .2s; }
+    #topBtns button:hover { transform: scale(1.1); }
+    #adminBtn { background: linear-gradient(135deg, #d4a017, #b8860b); }
+    #aiBtn { background: linear-gradient(135deg, #22d3ee, #0284c7); }
+    #aiPageBtn { background: linear-gradient(135deg, #34d399, #059669); }
 
-    #aiPageBtn {
-      background: linear-gradient(135deg, #34d399, #059669);
-      color: white;
-    }
+    /* HERO */
+    .hero { background: var(--grey-bg); padding: 4rem 2rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 10px); pointer-events: none; }
+    .hero-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+    .hero h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; color: white; line-height: 1.2; margin-bottom: 1rem; text-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+    .hero h1 span { color: var(--teal); }
+    .hero p { color: #ddd; font-size: 1rem; margin-bottom: 2rem; line-height: 1.7; }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-main { background: var(--teal); color: #111; padding: 0.85rem 2rem; border-radius: 4px; font-size: 0.95rem; font-weight: 700; text-decoration: none; border: none; cursor: pointer; font-family: var(--sans); transition: background .2s; display: inline-block; }
+    .btn-main:hover { background: #06b6d4; }
+    .btn-white { background: white; color: var(--grey-dark); padding: 0.85rem 2rem; border-radius: 4px; font-size: 0.95rem; font-weight: 700; text-decoration: none; border: none; cursor: pointer; font-family: var(--sans); transition: background .2s; }
+    .btn-white:hover { background: #e8e8e8; }
 
-    header {
-      text-align: center;
-      padding: 70px 20px 30px;
-    }
+    /* TRUST BAR */
+    .trust-bar { background: var(--grey-dark); display: flex; justify-content: center; flex-wrap: wrap; }
+    .trust-item { color: #ccc; font-size: 0.8rem; font-weight: 600; padding: 0.85rem 1.8rem; border-right: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 7px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .trust-item:last-child { border-right: none; }
+    .trust-item .tick { color: var(--teal); }
 
-    /* LOGO + TITLE WRAPPER */
-    .headerWrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
+    /* SECTIONS */
+    section { padding: 3rem 2rem; }
+    .section-inner { max-width: 1060px; margin: 0 auto; }
+    .section-heading { font-size: 1.6rem; font-weight: 700; color: var(--grey-dark); margin-bottom: 0.4rem; }
+    .section-underline { width: 50px; height: 3px; background: var(--teal); margin-bottom: 1.5rem; border-radius: 2px; }
+    .section-sub { color: var(--muted); font-size: 0.95rem; line-height: 1.7; margin-bottom: 2rem; max-width: 680px; }
 
-    .headerWrap img {
-      height: 70px;
-      width: auto;
-    }
+    /* SERVICES */
+    .services-bg { background: var(--grey-light); }
+    .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; }
+    .service-card { background: white; border: 1px solid var(--grey-mid); border-top: 3px solid var(--teal); border-radius: 4px; padding: 1.5rem; transition: box-shadow .2s, transform .2s; }
+    .service-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .service-icon { font-size: 1.8rem; margin-bottom: 0.7rem; }
+    .service-card h3 { font-size: 0.95rem; font-weight: 700; color: var(--grey-dark); margin-bottom: 0.4rem; }
+    .service-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
 
-    .title {
-      font-size: 48px;
-      color: #22d3ee;
-      margin: 0;
-    }
+    /* ABOUT */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+    .about-text p { font-size: 0.93rem; color: var(--muted); line-height: 1.8; margin-bottom: 1rem; }
+    .about-list { list-style: none; margin: 1rem 0; }
+    .about-list li { font-size: 0.88rem; color: var(--text); padding: 0.4rem 0; border-bottom: 1px solid var(--grey-mid); display: flex; align-items: center; gap: 8px; }
+    .about-list li::before { content: '✔'; color: var(--teal); font-weight: 700; flex-shrink: 0; }
+    .about-callout { background: var(--grey-bg); border-radius: 4px; padding: 2rem; color: white; }
+    .about-callout h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+    .about-callout p { font-size: 0.88rem; color: #ddd; line-height: 1.7; margin-bottom: 0.75rem; }
+    .about-callout .phone { font-size: 1.4rem; font-weight: 700; color: var(--teal); }
 
-    .subtitle {
-      color: #ccc;
-    }
+    /* FORMS */
+    .forms-bg { background: var(--grey-light); }
+    .forms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .form-panel { background: white; border: 1px solid var(--grey-mid); border-top: 3px solid var(--teal); border-radius: 4px; padding: 1.8rem; }
+    .form-panel h3 { font-size: 1.1rem; font-weight: 700; color: var(--grey-dark); margin-bottom: 1.2rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--grey-mid); }
+    .field { margin-bottom: 0.9rem; }
+    .field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .field input, .field textarea { width: 100%; padding: 0.65rem 0.85rem; border: 1px solid #ccc; border-radius: 3px; font-family: var(--sans); font-size: 0.88rem; color: var(--text); outline: none; transition: border .15s; background: white; }
+    .field input:focus, .field textarea:focus { border-color: var(--teal-dark); }
+    .field textarea { min-height: 90px; resize: vertical; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .submit-btn { width: 100%; padding: 0.85rem; background: var(--teal-dark); color: white; border: none; border-radius: 3px; font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: var(--sans); transition: background .2s; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .submit-btn:hover { background: var(--teal); color: #111; }
 
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 15px;
-    }
+    /* CHAT BOX */
+    #chatBox { background: var(--grey-light); border: 1px solid var(--grey-mid); border-radius: 3px; padding: 0.75rem; max-height: 160px; overflow-y: auto; margin-bottom: 0.75rem; min-height: 50px; font-size: 0.85rem; }
+    .msg { padding: 6px 10px; margin: 3px 0; border-radius: 3px; }
+    .user { background: #ddd; color: #333; }
 
-    .card {
-      background: rgba(17, 24, 39, 0.7);
-      padding: 25px;
-      margin: 25px 0;
-      border-radius: 16px;
-    }
+    /* FOOTER */
+    footer { background: var(--grey-dark); color: #aaa; padding: 2.5rem 2rem 1.5rem; }
+    .footer-inner { max-width: 1060px; margin: 0 auto; }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+    .footer-col h4 { font-size: 0.85rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.9rem; }
+    .footer-col p { font-size: 0.82rem; line-height: 1.7; }
+    .footer-col a { color: #aaa; text-decoration: none; display: block; font-size: 0.82rem; margin-bottom: 0.3rem; }
+    .footer-col a:hover { color: var(--teal); }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.2rem; font-size: 0.78rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
 
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 10px;
-      border: none;
-      background: #020617;
-      color: white;
-    }
+    /* ADMIN */
+    #adminPanel { display: none; background: #fff8e1; border-top: 3px solid #d4a017; }
+    #output { background: white; border: 1px solid #ccc; border-radius: 3px; padding: 1rem; font-size: 0.82rem; color: #555; min-height: 60px; margin-top: 0.75rem; white-space: pre-wrap; }
 
-    button {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      background: #0ea5e9;
-      color: white;
-      cursor: pointer;
-      margin-top: 10px;
-    }
+    /* LOGIN */
+    #loginBox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 2000; }
+    .login-card { background: white; border-top: 3px solid var(--teal); border-radius: 4px; padding: 2rem; width: 320px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+    .login-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.2rem; color: var(--grey-dark); }
+    .cancel-btn { width: 100%; padding: 0.65rem; background: white; color: var(--muted); border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem; cursor: pointer; font-family: var(--sans); margin-top: 0.5rem; }
 
-    #chatBox {
-      max-height: 200px;
-      overflow-y: auto;
-    }
+    /* AI PAGE */
+    #aiPage { display: none; position: fixed; inset: 0; background: white; z-index: 3000; flex-direction: column; }
+    .ai-header { background: var(--grey-dark); color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .ai-header strong { font-size: 1rem; }
+    .ai-header button { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    #aiChatBox { flex: 1; overflow-y: auto; padding: 1.5rem; background: var(--grey-light); display: flex; flex-direction: column; gap: 10px; }
+    .ai-bubble { max-width: 70%; padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; }
+    .ai-bubble.you { background: var(--grey-dark); color: white; align-self: flex-end; }
+    .ai-bubble.bot { background: white; border: 1px solid var(--grey-mid); color: var(--text); align-self: flex-start; }
+    .ai-bubble .who { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; color: var(--teal-dark); }
+    .ai-bubble.you .who { color: #aaa; }
+    .ai-footer { padding: 1rem 1.5rem; background: white; border-top: 1px solid var(--grey-mid); display: flex; gap: 0.75rem; }
+    .ai-footer textarea { flex: 1; padding: 0.65rem 0.85rem; border: 1px solid #ccc; border-radius: 3px; font-family: var(--sans); font-size: 0.88rem; resize: none; min-height: 44px; outline: none; }
+    .ai-footer textarea:focus { border-color: var(--teal-dark); }
+    .ai-footer button { background: var(--teal-dark); color: white; border: none; padding: 0 1.5rem; border-radius: 3px; font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: var(--sans); }
+    .ai-footer button:hover { background: var(--teal); color: #111; }
 
-    .msg {
-      padding: 8px;
-      margin: 5px 0;
-      border-radius: 6px;
-    }
-
-    .user { background: #1e293b; }
-    .ai { background: #0ea5e9; }
-
-    #loginBox {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.9);
-      align-items: center;
-      justify-content: center;
-    }
-
-    #adminPanel { display: none; }
-
-    /* FULL AI PAGE */
-    #aiPage {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #020617;
-      z-index: 2000;
-      flex-direction: column;
+    @media (max-width: 700px) {
+      .about-grid, .forms-grid, .footer-grid { grid-template-columns: 1fr; }
+      nav a { font-size: 0.75rem; padding: 0.7rem 0.8rem; }
+      .nav-cta { margin-left: 0; }
     }
   </style>
 </head>
-
 <body>
 
-<!-- TOP BUTTONS -->
 <div id="topBtns">
-  <button id="aiPageBtn" onclick="openAIPage()">💬</button>
-  <button id="aiBtn" onclick="toggleAI()">🤖</button>
-  <button id="adminBtn" onclick="openLogin()">🔐</button>
+  <button id="aiPageBtn" onclick="openAIPage()" title="AI Chat">💬</button>
+  <button id="aiBtn" onclick="toggleAI()" title="Toggle AI">🤖</button>
+  <button id="adminBtn" onclick="openLogin()" title="Admin">🔐</button>
+</div>
+
+<div class="top-bar">
+  <div class="top-bar-left">
+    <a href="tel:01234567890">📞 01234 567890</a>
+    <a href="mailto:info@spselectrical.co.uk">✉ info@spselectrical.co.uk</a>
+  </div>
+  <div>Mon – Fri: 8:00am – 5:30pm</div>
 </div>
 
 <header>
-
-  <div class="headerWrap">
-    <!-- LOGO ADDED HERE -->
-    <img src="image.png" alt="logo">
-
-    <div>
-      <div class="title">Sps</div>
-      <div class="subtitle">Electrical | Est 1989</div>
-      <div class="subtitle">---------------------------------------------------------------------------</div>
+  <div class="logo-wrap">
+    <img src="image.png" alt="SPS Electrical Logo">
+    <div class="logo-text">
+      <div class="name">SPS Electrical</div>
+      <div class="tagline">Professional Electricians · Est. 1989</div>
     </div>
   </div>
-
+  <div class="header-phone">
+    <div class="label">Call us today for a free quote</div>
+    <div class="number">01234 567890</div>
+  </div>
 </header>
 
-<div class="container">
+<nav>
+  <a href="#" class="active">Home</a>
+  <a href="#services">Services</a>
+  <a href="#about">About Us</a>
+  <a href="#quote">Contact</a>
+  <a href="#quote" class="nav-cta">Get a Free Quote</a>
+</nav>
 
-  <!-- QUOTE -->
-  <div class="card">
-    <h2>Get a Quote</h2>
-    <input id="qname" placeholder="Name">
-    <input id="qemail" placeholder="Email">
-    <input id="qphone" placeholder="Phone">
-    <input id="qaddress" placeholder="Address">
-    <textarea id="qmsg" placeholder="Message"></textarea>
-    <button onclick="sendQuote()">Send Quote</button>
-  </div>
-
-  <!-- CHAT -->
-  <div class="card">
-    <h2>Live Chat</h2>
-
-    <div id="chatBox"></div>
-
-    <input id="cname" placeholder="Name">
-    <textarea id="cmsg" placeholder="Message"></textarea>
-    <button onclick="sendChat()">Send</button>
-  </div>
-
-</div>
-
-<!-- ADMIN -->
-<div id="adminPanel" class="container">
-  <div class="card">
-    <h2>Admin Panel</h2>
-    <button onclick="loadData()">Refresh</button>
-    <div id="output"></div>
+<div class="hero">
+  <div class="hero-inner">
+    <h1>Domestic, Commercial &amp; Industrial<br><span>Electrical Services</span></h1>
+    <p>Trusted electricians serving the local area since 1989. No job too big or too small — from a single socket to a full rewire, we get the job done right.</p>
+    <div class="hero-btns">
+      <a href="#quote" class="btn-main">Get a Free Quote</a>
+      <a href="#services" class="btn-white">View Our Services</a>
+    </div>
   </div>
 </div>
 
-<!-- LOGIN -->
+<div class="trust-bar">
+  <div class="trust-item"><span class="tick">✔</span> Est. 1989</div>
+  <div class="trust-item"><span class="tick">✔</span> Fully Insured</div>
+  <div class="trust-item"><span class="tick">✔</span> Free Quotes</div>
+  <div class="trust-item"><span class="tick">✔</span> Domestic &amp; Commercial</div>
+  <div class="trust-item"><span class="tick">✔</span> All Work Guaranteed</div>
+  <div class="trust-item"><span class="tick">✔</span> 5★ Rated</div>
+</div>
+
+<section class="services-bg" id="services">
+  <div class="section-inner">
+    <h2 class="section-heading">Our Services</h2>
+    <div class="section-underline"></div>
+    <p class="section-sub">We offer a full range of electrical services for domestic, commercial and industrial customers. Whatever your electrical needs, our qualified team is here to help.</p>
+    <div class="services-grid">
+      <div class="service-card"><div class="service-icon">🔌</div><h3>Sockets &amp; Wiring</h3><p>New sockets, additional circuits and full or partial rewires carried out to the highest standard.</p></div>
+      <div class="service-card"><div class="service-icon">💡</div><h3>Lighting</h3><p>Indoor and outdoor lighting installation, security lighting and LED upgrades throughout your property.</p></div>
+      <div class="service-card"><div class="service-icon">🔧</div><h3>Fusebox Replacement</h3><p>Consumer unit upgrades and fuseboard replacements to bring your property up to current regulations.</p></div>
+      <div class="service-card"><div class="service-icon">📋</div><h3>EICR Testing</h3><p>Electrical Installation Condition Reports for landlords, homeowners and businesses. Certificates issued.</p></div>
+      <div class="service-card"><div class="service-icon">🚗</div><h3>EV Car Chargers</h3><p>Home and commercial electric vehicle charging point installation by qualified engineers.</p></div>
+      <div class="service-card"><div class="service-icon">🏢</div><h3>Commercial Work</h3><p>Full electrical fit-outs, maintenance contracts and PAT testing for businesses of all sizes.</p></div>
+      <div class="service-card"><div class="service-icon">⚡</div><h3>Emergency Callouts</h3><p>Electrical faults and emergencies dealt with promptly. Fast response, reliable service.</p></div>
+      <div class="service-card"><div class="service-icon">🏠</div><h3>Home Installations</h3><p>Cooker points, shower circuits, extractor fans, alarms and all domestic electrical installations.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="section-inner">
+    <div class="about-grid">
+      <div class="about-text">
+        <h2 class="section-heading">About SPS Electrical</h2>
+        <div class="section-underline"></div>
+        <p>SPS Electrical has been providing professional electrical services to domestic, commercial and industrial customers since 1989. With over 35 years of experience, our team of qualified electricians deliver reliable, high-quality work at competitive prices.</p>
+        <p>We believe no job is too big or too small. Whether you need a single socket fitted or a complete rewire, you'll receive the same professional, friendly service our customers have relied on for decades.</p>
+        <p>All our work is fully guaranteed and carried out to current regulations. We are fully insured and all electricians hold the relevant qualifications.</p>
+        <ul class="about-list">
+          <li>Over 35 years trading</li>
+          <li>Fully qualified electricians</li>
+          <li>All work fully guaranteed</li>
+          <li>Public liability insurance</li>
+          <li>Domestic, commercial &amp; industrial</li>
+          <li>Free, no-obligation quotes</li>
+          <li>Clean &amp; tidy — dust sheets always used</li>
+        </ul>
+      </div>
+      <div>
+        <div class="about-callout">
+          <h3>Get in touch today</h3>
+          <p>Call us now for a free, no-obligation quote. We're happy to discuss your requirements and provide honest, straightforward advice.</p>
+          <div class="phone">01234 567890</div>
+          <p style="font-size:0.82rem;color:#ccc;margin-top:0.4rem">Mon – Fri: 8:00am – 5:30pm</p>
+          <a href="#quote" class="btn-main" style="margin-top:1.2rem;display:inline-block;font-size:0.85rem;">Request a Quote Online</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="forms-bg" id="quote">
+  <div class="section-inner">
+    <h2 class="section-heading">Get in Touch</h2>
+    <div class="section-underline"></div>
+    <p class="section-sub">Fill in the form below for a free, no-obligation quote. Or use the live chat to send us a quick message.</p>
+    <div class="forms-grid">
+      <div class="form-panel">
+        <h3>📋 Request a Free Quote</h3>
+        <div class="field-row">
+          <div class="field"><label>Name</label><input id="qname" placeholder="Your name"></div>
+          <div class="field"><label>Phone</label><input id="qphone" placeholder="Your phone number"></div>
+        </div>
+        <div class="field"><label>Email</label><input id="qemail" type="email" placeholder="Your email address"></div>
+        <div class="field"><label>Address</label><input id="qaddress" placeholder="Property address"></div>
+        <div class="field"><label>Details</label><textarea id="qmsg" placeholder="Describe the work required..."></textarea></div>
+        <button class="submit-btn" onclick="sendQuote()">Send Quote Request</button>
+      </div>
+      <div class="form-panel">
+        <h3>💬 Send a Message</h3>
+        <div id="chatBox"></div>
+        <div class="field"><label>Your Name</label><input id="cname" placeholder="Your name"></div>
+        <div class="field"><label>Message</label><textarea id="cmsg" placeholder="Type your message here..."></textarea></div>
+        <button class="submit-btn" onclick="sendChat()">Send Message</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="adminPanel">
+  <section>
+    <div class="section-inner">
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:1rem">🔐 Admin Panel</h2>
+      <button class="submit-btn" style="width:auto;padding:0.65rem 1.5rem" onclick="loadData()">Refresh Submissions</button>
+      <div id="output">No data loaded yet.</div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>SPS Electrical</h4>
+        <p>Professional electrical services for domestic, commercial and industrial customers. Est. 1989. All work fully guaranteed and carried out to current regulations.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <a href="#services">Rewiring</a>
+        <a href="#services">Fusebox Replacement</a>
+        <a href="#services">EICR Testing</a>
+        <a href="#services">EV Chargers</a>
+        <a href="#services">Lighting</a>
+        <a href="#services">Emergency Callouts</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="tel:01234567890">📞 01234 567890</a>
+        <a href="mailto:info@spselectrical.co.uk">✉ info@spselectrical.co.uk</a>
+        <p style="margin-top:0.5rem">Mon – Fri: 8:00am – 5:30pm</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 SPS Electrical. All rights reserved.</span>
+      <span>Est. 1989 · Fully Insured · All Work Guaranteed</span>
+    </div>
+  </div>
+</footer>
+
 <div id="loginBox">
-  <div style="background:#111827;padding:20px;border-radius:10px;">
-    <input id="user" placeholder="Username">
-    <input id="pass" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+  <div class="login-card">
+    <h3>Admin Login</h3>
+    <div class="field"><label>Username</label><input id="user" placeholder="Username"></div>
+    <div class="field"><label>Password</label><input id="pass" type="password" placeholder="Password"></div>
+    <button class="submit-btn" onclick="login()">Login</button>
+    <button class="cancel-btn" onclick="document.getElementById('loginBox').style.display='none'">Cancel</button>
   </div>
 </div>
 
-<!-- FULL AI PAGE -->
 <div id="aiPage">
-
-  <div style="padding:15px;background:#0f172a;display:flex;justify-content:space-between;">
-    <b>AI Assistant</b>
+  <div class="ai-header">
+    <strong>SPS Electrical — AI Assistant</strong>
     <button onclick="closeAIPage()">✖</button>
   </div>
-
-  <div id="aiChatBox" style="flex:1;overflow-y:auto;padding:15px;"></div>
-
-  <div style="padding:15px;background:#0f172a;">
-    <textarea id="aiInput" placeholder="Ask anything..."></textarea>
+  <div id="aiChatBox"></div>
+  <div class="ai-footer">
+    <textarea id="aiInput" placeholder="Ask about our services..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"></textarea>
     <button onclick="sendAIMessage()">Send</button>
   </div>
-
 </div>
 
 <script>
+  let aiEnabled = true;
+  function toggleAI() { aiEnabled = !aiEnabled; document.getElementById('aiBtn').style.opacity = aiEnabled ? '1' : '0.4'; }
 
-/* AI TOGGLE */
-let aiEnabled = true;
-
-function toggleAI() {
-  aiEnabled = !aiEnabled;
-  aiBtn.style.opacity = aiEnabled ? "1" : "0.4";
-}
-
-/* AI PAGE */
-function openAIPage() {
-  aiPage.style.display = "flex";
-}
-
-function closeAIPage() {
-  aiPage.style.display = "none";
-}
-
-/* AI CHAT */
-let aiChat = [];
-
-function sendAIMessage() {
-  const text = aiInput.value;
-  if (!text) return;
-
-  aiChat.push({ sender: "You", text });
-
-  let reply = "I'm here to help with electrical questions.";
-
-  const msg = text.toLowerCase();
-
-  if (msg.includes("socket")) reply = "We install sockets 👍";
-  else if (msg.includes("rewire")) reply = "Rewires require inspection.";
-  else if (msg.includes("hi")) reply = "Hi 👋";
-
-  aiChat.push({ sender: "AI", text: reply });
-
-  renderAIChat();
-  aiInput.value = "";
-}
-
-function renderAIChat() {
-  let html = "";
-
-  aiChat.forEach(m => {
-    html += `
-      <div style="margin:8px 0;padding:10px;border-radius:8px;
-      background:${m.sender === "AI" ? "#0ea5e9" : "#1e293b"}">
-        <b>${m.sender}:</b> ${m.text}
-      </div>`;
-  });
-
-  aiChatBox.innerHTML = html;
-}
-
-/* LOGIN */
-function openLogin() {
-  loginBox.style.display = "flex";
-}
-
-function login() {
-  if (user.value === "paul" && pass.value === "admin") {
-    loginBox.style.display = "none";
-    adminPanel.style.display = "block";
+  function openAIPage() {
+    document.getElementById('aiPage').style.display = 'flex';
+    if (!document.getElementById('aiChatBox').children.length) {
+      addBubble('bot', "Hello! 👋 I'm the SPS Electrical assistant. How can I help you today?");
+    }
   }
-}
+  function closeAIPage() { document.getElementById('aiPage').style.display = 'none'; }
 
-/* QUOTE */
-async function sendQuote() {
-  await fetch("/send-quote", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      name: qname.value,
-      email: qemail.value,
-      phone: qphone.value,
-      address: qaddress.value,
-      message: qmsg.value
-    })
-  });
+  function addBubble(type, text) {
+    const box = document.getElementById('aiChatBox');
+    const d = document.createElement('div');
+    d.className = 'ai-bubble ' + type;
+    d.innerHTML = `<div class="who">${type === 'bot' ? 'SPS Electrical' : 'You'}</div>${text}`;
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
+  }
 
-  alert("Quote sent ✔");
-}
+  function sendAIMessage() {
+    const inp = document.getElementById('aiInput');
+    const text = inp.value.trim();
+    if (!text) return;
+    addBubble('you', text);
+    inp.value = '';
+    const m = text.toLowerCase();
+    let r = "Thanks for getting in touch. For detailed enquiries please call us on 01234 567890 or use the quote form.";
+    if (m.includes('socket') || m.includes('outlet')) r = "We install and repair all types of sockets. Get a free quote using the form on our site!";
+    else if (m.includes('rewire')) r = "Full and partial rewires are one of our specialties. Fill in our quote form and we'll get back to you promptly.";
+    else if (m.includes('price') || m.includes('cost') || m.includes('quote')) r = "We offer free, no-obligation quotes. Fill in the form on our website or call 01234 567890.";
+    else if (m.includes('hi') || m.includes('hello') || m.includes('hey')) r = "Hello! 👋 How can SPS Electrical help you today?";
+    else if (m.includes('light')) r = "We handle all lighting work — installation, upgrades, outdoor security lighting and LED conversions.";
+    else if (m.includes('eicr') || m.includes('certificate') || m.includes('report')) r = "We carry out EICR reports for landlords and homeowners. Contact us for a competitive quote.";
+    else if (m.includes('ev') || m.includes('car charger')) r = "We install home and commercial EV charging points. Call 01234 567890 or fill in our quote form.";
+    else if (m.includes('emergency')) r = "For electrical emergencies, please call us directly on 01234 567890.";
+    else if (m.includes('1989') || m.includes('how long')) r = "SPS Electrical has been trading since 1989 — over 35 years of trusted local service!";
+    setTimeout(() => addBubble('bot', r), 350);
+  }
 
-/* CHAT */
-async function sendChat() {
-  const name = cname.value;
+  function openLogin() { document.getElementById('loginBox').style.display = 'flex'; }
+  function login() {
+    if (document.getElementById('user').value === 'paul' && document.getElementById('pass').value === 'admin') {
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('adminPanel').style.display = 'block';
+      document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+    } else { alert('Incorrect credentials.'); }
+  }
 
-  await fetch("/send-message", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      name,
-      message: cmsg.value
-    })
-  });
+  async function sendQuote() {
+    await fetch('/send-quote', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: document.getElementById('qname').value, email: document.getElementById('qemail').value, phone: document.getElementById('qphone').value, address: document.getElementById('qaddress').value, message: document.getElementById('qmsg').value }) });
+    alert('Quote request sent ✔ We will be in touch soon!');
+  }
 
-  cmsg.value = "";
-}
+  async function sendChat() {
+    const name = document.getElementById('cname').value;
+    const msg = document.getElementById('cmsg').value;
+    if (!name || !msg) return;
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    div.textContent = name + ': ' + msg;
+    document.getElementById('chatBox').appendChild(div);
+    await fetch('/send-message', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, message: msg }) });
+    document.getElementById('cmsg').value = '';
+  }
 
+  function loadData() {
+    document.getElementById('output').textContent = 'Loading...';
+    fetch('/admin/data').then(r => r.json()).then(d => { document.getElementById('output').textContent = JSON.stringify(d, null, 2); }).catch(() => { document.getElementById('output').textContent = 'No data available.'; });
+  }
 </script>
-
 </body>
 </html>
